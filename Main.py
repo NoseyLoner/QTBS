@@ -1,4 +1,5 @@
 import os
+import time
 from random import randint
 from Constants import Constants
 
@@ -9,11 +10,12 @@ class Unit:
     FriendlyUnits = []
     PassiveUnits = []
 
-    def __init__(self,Damage:int,Health:int,Team:Constants):
+    def __init__(self,Damage:int,MaxHealth:int,Team:Constants):
         Unit.Units.append(self)
         self.Alive = True
         self.Damage = Damage
-        self.Health = Health
+        self.MaxHealth = MaxHealth
+        self.Health = MaxHealth
         self.Team = Team
         
     def Attack(self,Target):
@@ -50,10 +52,33 @@ class Unit:
             for i in range(Amount):
                 cls.FriendlyUnits.append(Unit(randint(4,7),randint(14,20),Constants.Passive))
 
+    @classmethod
+    def Display(cls,Team):
+        if Team == Constants.Hostile:
+            print("Hostile Units")
+            for i in range(len(cls.HostileUnits)):
+                print(f"Unit{i + 1}:{cls.HostileUnits[i].Health}/{cls.HostileUnits[i].MaxHealth} Health,{cls.HostileUnits[i].Damage} Damage")
+        elif Team == Constants.Friendly:
+            print("Friendly Units")
+            for i in range(len(cls.FriendlyUnits)):
+                print(f"Unit{i + 1}:{cls.FriendlyUnits[i].Health}/{cls.FriendlyUnits[i].MaxHealth} Health,{cls.FriendlyUnits[i].Damage} Damage")
+        else:
+            print("Passive Units")
+            for i in range(len(cls.PassiveUnits)):
+                print(f"Unit{i + 1}:{cls.PassiveUnits[i].Health}/{cls.PassiveUnits[i].MaxHealth} Health,{cls.PassiveUnits[i].Damage} Damage")
+        print()
+
 class Controller:
     
     def __init__(self,Team):
         self.Team = Team
+
+def Starter():
+    Coin = randint(0,1)
+    Guess = int(input("Guess 0 or 1: "))
+    if Guess == Coin:
+        return True
+    return False
 
     
 def Main():
@@ -65,5 +90,31 @@ def Main():
     Player = Controller(Constants.Friendly)
     Enemy = Controller(Constants.Hostile)
 
-
+    for i in range(3):
+        print("...")
+        time.sleep(1)
     
+    print("Ready!")
+    os.system("clear")
+
+    Unit.Display(Constants.Hostile)
+    Unit.Display(Constants.Friendly)
+
+    Turn = Starter()
+    Sides = {"E":Constants.Hostile,"F":Constants.Friendly}
+
+    while True:
+        if Turn:
+            print("Player's Turn")
+            Side = input("Enter the side you want to target, Enemy(E) or Friendly(F): ").capitalize()
+            Side = Sides[Side]
+            Target = int(input("Enter the number of the unit you want to attack: "))
+            Attacker = int(input("Enter the number of the unit you want to attack with: "))
+            if Side == Constants.Hostile:
+                Unit.FriendlyUnits[Attacker - 1].Attack(Unit.HostileUnits[Target - 1]) 
+            else:
+                Unit.FriendlyUnits[Attacker - 1].Attack(Unit.FriendlyUnits[Target - 1])
+        else:
+            ...
+
+Main()
