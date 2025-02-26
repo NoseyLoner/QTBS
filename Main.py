@@ -6,7 +6,9 @@ from Constants import Constants
 class Unit:
 
     Units = []
-    HostileUnits = []
+
+    # TODO: Change these into a dictionary and/or something that uses the team constants 
+    HostileUnits = [] 
     FriendlyUnits = []
     PassiveUnits = []
 
@@ -23,6 +25,19 @@ class Unit:
             Target.Health -= self.Damage
         else:
             Target.Health += self.Damage
+
+    # TODO: Not ready,finish later
+    @classmethod
+    def Health(cls,Team): # Temporary,see above: ^^^
+        HealthTotal = 0
+        MaxTotal = 0
+        Healths = {}
+        for Unit in cls.Units:
+            if Unit.Team == Team:
+                HealthTotal += Unit.Health
+                MaxTotal += Unit.MaxHealth
+                Healths[Unit.Health] = Unit.Maxh
+        return (HealthTotal,MaxTotal)
     
     @classmethod
     def Check(cls):
@@ -73,6 +88,14 @@ class Controller:
     def __init__(self,Team):
         self.Team = Team
 
+# Might merge with future enemy class
+# Might also generalise using *args
+def Chance(Probability:int):
+    Result = randint(1,100)
+    if Result <= Probability:
+        return True
+    return False
+
 def Starter():
     Coin = randint(0,1)
     Guess = int(input("Guess 0 or 1: "))
@@ -115,6 +138,10 @@ def Main():
             else:
                 Unit.FriendlyUnits[Attacker - 1].Attack(Unit.FriendlyUnits[Target - 1])
         else:
-            ...
-
+            Ratio = Unit.Health(Constants.Hostile)
+            Ratio = round(Ratio[0]/Ratio[1],1)
+            Attack = Chance(Ratio)
+            if Attack:
+                pass
+            
 Main()
