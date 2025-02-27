@@ -1,6 +1,6 @@
 import os
 import time
-from random import randint
+from random import randint,choice
 from Constants import Constants
 
 class Unit:
@@ -25,6 +25,24 @@ class Unit:
             Target.Health -= self.Damage
         else:
             Target.Health += self.Damage
+            if Target.Health > Target.MaxHealth:
+                Target.Health = Target.MaxHealth
+
+    @classmethod
+    def Strongest(cls):
+         Damages = {}
+         for Enemy in cls.HostileUnits:
+             Damages[Enemy.Damage] = Enemy
+         Strongest = max(Damages)
+         return Damages[Strongest]
+
+    @classmethod
+    def Weakest(cls):
+        Healths = {}
+        for Enemy in cls.HostileUnits:
+            Healths[Enemy.Health] = Enemy
+        Weakest = min(Healths)
+        return Healths[Weakest]
 
     # TODO: Not ready,finish later
     @classmethod
@@ -36,7 +54,7 @@ class Unit:
             if Unit.Team == Team:
                 HealthTotal += Unit.Health
                 MaxTotal += Unit.MaxHealth
-                Healths[Unit.Health] = Unit.Maxh
+                Healths[Unit.Health] = Unit.MaxHealth
         return (HealthTotal,MaxTotal)
     
     @classmethod
@@ -44,6 +62,12 @@ class Unit:
         for Instance in cls.Units:
             if Instance.Health <= 0:
                 Instance.Alive = False
+                try:
+                    cls.FriendlyUnits.remove(Instance)
+                    cls.HostileUnits.remove(Instance)
+                    cls.PassiveUnits.remove(Instance)
+                except ValueError:
+                    pass    
 
     @classmethod
     def Split(cls):
@@ -72,15 +96,18 @@ class Unit:
         if Team == Constants.Hostile:
             print("Hostile Units")
             for i in range(len(cls.HostileUnits)):
-                print(f"Unit{i + 1}:{cls.HostileUnits[i].Health}/{cls.HostileUnits[i].MaxHealth} Health,{cls.HostileUnits[i].Damage} Damage")
+                if cls.HostileUnits[i].Alive:
+                    print(f"Unit{i + 1}:{cls.HostileUnits[i].Health}/{cls.HostileUnits[i].MaxHealth} Health,{cls.HostileUnits[i].Damage} Damage")
         elif Team == Constants.Friendly:
             print("Friendly Units")
             for i in range(len(cls.FriendlyUnits)):
-                print(f"Unit{i + 1}:{cls.FriendlyUnits[i].Health}/{cls.FriendlyUnits[i].MaxHealth} Health,{cls.FriendlyUnits[i].Damage} Damage")
+                if cls.FriendlyUnits[i].Alive:
+                    print(f"Unit{i + 1}:{cls.FriendlyUnits[i].Health}/{cls.FriendlyUnits[i].MaxHealth} Health,{cls.FriendlyUnits[i].Damage} Damage")
         else:
             print("Passive Units")
             for i in range(len(cls.PassiveUnits)):
-                print(f"Unit{i + 1}:{cls.PassiveUnits[i].Health}/{cls.PassiveUnits[i].MaxHealth} Health,{cls.PassiveUnits[i].Damage} Damage")
+                if cls.PassiveUnits[i].Alive:
+                    print(f"Unit{i + 1}:{cls.PassiveUnits[i].Health}/{cls.PassiveUnits[i].MaxHealth} Health,{cls.PassiveUnits[i].Damage} Damage")
         print()
 
 class Controller:
@@ -120,13 +147,12 @@ def Main():
     print("Ready!")
     os.system("clear")
 
-    Unit.Display(Constants.Hostile)
-    Unit.Display(Constants.Friendly)
-
     Turn = Starter()
     Sides = {"E":Constants.Hostile,"F":Constants.Friendly}
 
     while True:
+        Unit.Display(Constants.Hostile)
+        Unit.Display(Constants.Friendly)
         if Turn:
             print("Player's Turn")
             Side = input("Enter the side you want to target, Enemy(E) or Friendly(F): ").capitalize()
@@ -134,14 +160,22 @@ def Main():
             Target = int(input("Enter the number of the unit you want to attack: "))
             Attacker = int(input("Enter the number of the unit you want to attack with: "))
             if Side == Constants.Hostile:
-                Unit.FriendlyUnits[Attacker - 1].Attack(Unit.HostileUnits[Target - 1]) 
+                Unit.FriendlyUnits[Attacker - 1].Attack(Unit.HostileUnits[Target - 1])
+                print(f"\nYou Attacked Unit")
             else:
                 Unit.FriendlyUnits[Attacker - 1].Attack(Unit.FriendlyUnits[Target - 1])
         else:
             Ratio = Unit.Health(Constants.Hostile)
-            Ratio = round(Ratio[0]/Ratio[1],1)
+            Ratio = round(Ratio[0]/Ratio[1],2) * 100
             Attack = Chance(Ratio)
+            Strongest = Unit.Strongest()
             if Attack:
-                pass
-            
+                Strongest.Attack(choice(Unit.FriendlyUnits))
+            else:
+                Weakest = Unit.Weakest()
+                Strongest.Attack(Weakest)
+        
+        Turn = not Turn
+        Unit.Check()
+
 Main()
