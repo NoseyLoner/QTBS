@@ -146,7 +146,12 @@ def Starter():
     print("You guessed incorrectly! Enemy starts.\n")
     return False
 
-    
+def Clear():
+    if os.name == "nt":
+        os.system("clear")
+    else:
+        os.system("cls")
+
 def Main():
     print("QTBS: First Concept.")
     print("Setting Up...")
@@ -162,7 +167,7 @@ def Main():
     
     print("Ready!")
     time.sleep(1)
-    os.system("cls")
+    Clear()
 
     print("Welcome to QTBS!")
     time.sleep(1)
@@ -218,7 +223,7 @@ def Main():
         Clearer += 1
         if Clearer % 2 == 0:
             time.sleep(2)
-            os.system("cls")
+            Clear()
             Clearer = 0
 
 Main()
