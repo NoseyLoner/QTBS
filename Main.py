@@ -7,7 +7,7 @@ class Unit:
 
     Units = []
 
-    # TODO: Change these into a dictionary and/or something that uses the team constants 
+    # TODO: Change these into a dictionary that uses the team constants 
     HostileUnits = [] 
     FriendlyUnits = []
     PassiveUnits = []
@@ -137,9 +137,17 @@ def Chance(Probability:int):
         return True
     return False
 
-def Starter():
+def Starter() -> bool:
     Coin = randint(0,1)
-    Guess = int(input("Guess 0 or 1: "))
+    Valid = [0,1]
+    while True:
+        try:
+            Guess = int(input("Guess the coin flip! 0 or 1: "))
+            if Guess in Valid:
+                break
+            print("Invalid input,please try again.")
+        except ValueError:
+            print("Invalid input,please try again.")
     if Guess == Coin:
         print("You guessed correctly! You start.\n")
         return True
@@ -148,9 +156,9 @@ def Starter():
 
 def Clear():
     if os.name == "nt":
-        os.system("clear")
-    else:
         os.system("cls")
+    else:
+        os.system("clear")
 
 def Main():
     print("QTBS: First Concept.")
@@ -172,6 +180,8 @@ def Main():
     print("Welcome to QTBS!")
     time.sleep(1)
     Turn = Starter()
+    time.sleep(1)
+    Clear()
     Clearer = 0
     time.sleep(1)
     Sides = {"E":Constants.Hostile,"F":Constants.Friendly}
@@ -182,16 +192,39 @@ def Main():
         time.sleep(1)
         if Turn:
             print("Player's Turn:")
-            Side = input("Enter the side you want to target, Enemy(E) or Friendly(F): ").capitalize()
-            Side = Sides[Side]
-            Target = int(input("Enter the number of the unit you want to attack: "))
-            Attacker = int(input("Enter the number of the unit you want to attack with: "))
+            while True:
+                try:
+                    Side = input("Enter the side you want to target, Enemy(E) or Friendly(F): ").capitalize()
+                    Side = Sides[Side]
+                    break
+                except KeyError:
+                    print("Invalid input, please try again.")
+            while True:
+                try:
+                    Target = int(input("Enter the number of the unit you want to attack: "))
+                    #This is horrible, please fix it when you update the unit class
+                    if Side == Constants.Hostile:
+                        if Target not in range(1,len(Unit.HostileUnits) + 1):
+                            raise ValueError
+                    elif Side == Constants.Friendly:
+                        if Target not in range(1,len(Unit.FriendlyUnits) + 1):
+                            raise ValueError
+                    break
+                except ValueError:
+                    print("Invalid input, please try again.")
+            while True:
+                try:
+                    Attacker = int(input("Enter the number of the unit you want to attack with: "))
+                    if Attacker not in range(1,len(Unit.FriendlyUnits) + 1):
+                        raise ValueError
+                    break
+                except ValueError:
+                    print("Invalid input, please try again.")
             if Side == Constants.Hostile:
                 Unit.FriendlyUnits[Attacker - 1].Attack(Unit.HostileUnits[Target - 1])
                 print(f"\nYou Attacked Unit {Target} with Unit {Attacker} and dealt {Unit.FriendlyUnits[Attacker - 1].Damage} damage.\n")
                 if not Unit.HostileUnits[Target - 1].Alive:
-                    print(f"You have killed Unit {Unit.HostileUnits.index(Target) + 1}!\n")
-                time.sleep(1)
+                    print(f"You have killed Unit {Target}!\n")
             else:
                 Unit.FriendlyUnits[Attacker - 1].Attack(Unit.FriendlyUnits[Target - 1])
                 print(f"\nYou Healed Unit {Target} with Unit {Attacker} and healed {Unit.FriendlyUnits[Attacker - 1].Damage} health.\n")
