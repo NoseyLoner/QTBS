@@ -5,5 +5,5 @@ class Constants(Enum):
     Hostile = "Hostile"
     Passive = "Passive"
     Friendly = "Friendly"
-    Mixed = "Mixed"
+    All = "All"
 
