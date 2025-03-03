@@ -1,6 +1,6 @@
 import os
-import time
 import subprocess
+from time import sleep
 from random import randint,choice
 from Constants import Constants
 
@@ -76,24 +76,26 @@ class Unit:
 
     @classmethod
     def Create(cls,Amount:int,Team:Constants):
+        for Team in T
         for i in range(Amount):
             cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team))
 
-    @classmethod
-    def Display(cls,Team:Constants = Constants.All):
+    @classmethod #ur a dumb ass bitch
+    def Display(cls,Team:list[Constants] = Constants.All):
         if Team == Constants.All:
             for Teams in cls.Units:
-                print("*" * 28)
-                print(f"{Teams} Units: {len(cls.Units[Teams])}/3")
+                print("-" * 28)
+                print(f"{Teams.value} Units: {len(cls.Units[Teams])}/3")
                 for Unit in cls.Units[Teams]:
                     print(f"Unit {cls.Units[Teams].index(Unit) + 1}: Health: {Unit.Health}/{Unit.MaxHealth}, Damage: {Unit.Damage}")
-                print("*" * 28,"\n")
+                print("-" * 28,"\n")
+                sleep(1)
         else:
             print("*" * 28)
-            print(f"{Team} Units: {len(cls.Units[Team])}/3")
+            print(f"{Team.value} Units: {len(cls.Units[Team])}/3")
             for Unit in cls.Units[Team]:
                 print(f"Unit {cls.Units[Team].index(Unit) + 1}: Health: {Unit.Health}/{Unit.MaxHealth}, Damage: {Unit.Damage}")
-            print("*" * 28,"\n")
+            print("-" * 28,"\n")
 
 # Make Useful 
 class Controller:
@@ -142,26 +144,25 @@ def Main():
     print("QTBS: First Concept.")
     print("Setting Up...")
 
-    Unit.Create(3,Constants.Friendly)
-    Unit.Create(3,Constants.Hostile)
+    Unit.Create(2,[Constants.Friendly,Constants.Hostile])
     # Player = Controller(Constants.Friendly)
     # Enemy = Controller(Constants.Hostile)
 
     for i in range(3):
         print("...")
-        time.sleep(1)
+        sleep(1)
     
     print("Ready!")
-    time.sleep(1)
+    sleep(1)
     Clear()
 
     print("Welcome to QTBS!")
-    time.sleep(1)
+    sleep(1)
     Turn = Starter()
-    time.sleep(1)
+    sleep(1)
     Clear()
     Clearer = 0
-    time.sleep(1)
+    sleep(1)
     Sides = {"E":Constants.Hostile,"F":Constants.Friendly}
 
     while True:
@@ -171,7 +172,7 @@ def Main():
             print(Winner)
             break
         Unit.Display()
-        time.sleep(1)
+        sleep(1)
         if Turn:
             print("Player's Turn:")
             while True:
@@ -206,7 +207,7 @@ def Main():
                     print(f"You have killed Unit {TargetIndex}!\n")
             else:
                 print(f"\nYou Healed Unit {Target} with Unit {Attacker} and healed {Unit.FriendlyUnits[Attacker - 1].Damage} health.\n")
-            time.sleep(1)
+            sleep(1)
 
         else:
             print("Enemy's Turn:")
@@ -219,30 +220,30 @@ def Main():
                 Target = choice(Unit.Units[Constants.Friendly])
                 TargetIndex = (Unit.FriendlyUnits.index(Target) + 1)
                 Strongest.Attack(Target)
-                time.sleep(2)
+                sleep(2)
                 print(f"Enemy Attacked Unit {TargetIndex} with Unit {StrongestIndex},dealt {Strongest.Damage} damage.\n")
-                time.sleep(1)
+                sleep(1)
                 if not Target.Alive:
                     print(f"The Enemy has killed Unit {TargetIndex}!\n")
-                time.sleep(1)
+                sleep(1)
             else:
                 Weakest = Unit.Weakest(Constants.Hostile)
                 WeakestIndex = (Unit.HostileUnits.index(Weakest) + 1)
                 Strongest.Attack(Weakest)
-                time.sleep(2)
+                sleep(2)
                 print(f"Enemy Healed Unit {WeakestIndex} with Unit {StrongestIndex},healed {Strongest.Damage} health.\n")
-                time.sleep(1)
+                sleep(1)
         
         Turn = not Turn
         Unit.Check()
         Clearer += 1
         if Clearer % 2 == 0:
-            time.sleep(2)
+            sleep(2)
             Clear()
             Clearer = 0
     
     print("Thank you for playing QTBS!")
-    time.sleep(1)
+    sleep(1)
     exit()
 
 Main()
