@@ -74,28 +74,38 @@ class Unit:
         elif len(cls.Units[Constants.Hostile]) == 0:
             raise GameOverException("Hostile Units Win!")  
 
+    #This...doesn't work,Why?
     @classmethod
-    def Create(cls,Amount:int,Team:Constants):
-        for Team in T
-        for i in range(Amount):
-            cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team))
+    def Create(cls,Amount:int,Teams:list[Constants] = Constants.All):
+        if Teams == Constants.All:
+            for ATeam in cls.Units:
+                for i in range(Amount):
+                    cls.Units[ATeam].append(Unit(randint(4,7),randint(14,20),ATeam))
+                    print(len(cls.Units[ATeam]))
+        else:
+            for Team in Teams:
+                for i in range(Amount):
+                    cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team))
+                    print(len(cls.Units[Team]))
 
     @classmethod #ur a dumb ass bitch
-    def Display(cls,Team:list[Constants] = Constants.All):
-        if Team == Constants.All:
-            for Teams in cls.Units:
+    def Display(cls,Teams:list[Constants] = Constants.All):
+        if Teams == Constants.All:
+            for ATeam in cls.Units:
                 print("-" * 28)
-                print(f"{Teams.value} Units: {len(cls.Units[Teams])}/3")
-                for Unit in cls.Units[Teams]:
-                    print(f"Unit {cls.Units[Teams].index(Unit) + 1}: Health: {Unit.Health}/{Unit.MaxHealth}, Damage: {Unit.Damage}")
+                print(f"{ATeam.name} Units: {len(cls.Units[ATeam])}/3")
+                for AUnit in cls.Units[ATeam]:
+                    print(f"Unit {cls.Units[ATeam].index(AUnit) + 1}: Health: {AUnit.Health}/{AUnit.MaxHealth}, Damage: {AUnit.Damage}")
                 print("-" * 28,"\n")
                 sleep(1)
         else:
-            print("*" * 28)
-            print(f"{Team.value} Units: {len(cls.Units[Team])}/3")
-            for Unit in cls.Units[Team]:
-                print(f"Unit {cls.Units[Team].index(Unit) + 1}: Health: {Unit.Health}/{Unit.MaxHealth}, Damage: {Unit.Damage}")
-            print("-" * 28,"\n")
+            for Team in Teams:
+                print("-" * 28)
+                print(f"{Team.name} Units: {len(cls.Units[Team])}/3")
+                for Unit in cls.Units[Team]:
+                    print(f"Unit {cls.Units[Team].index(Unit) + 1}: Health: {Unit.Health}/{Unit.MaxHealth}, Damage: {Unit.Damage}")
+                print("-" * 28,"\n")
+                sleep(1)
 
 # Make Useful 
 class Controller:
@@ -171,7 +181,7 @@ def Main():
         except GameOverException as Winner:
             print(Winner)
             break
-        Unit.Display()
+        Unit.Display([Constants.Friendly,Constants.Hostile])
         sleep(1)
         if Turn:
             print("Player's Turn:")
