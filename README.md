@@ -1,2 +1,2 @@
 # QTBS
-A Turn-Based Strategy game with Quantum Mechanics
+A Turn-Based Strategy game with Quantum Mechanics (Eventually)
