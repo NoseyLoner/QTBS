@@ -76,17 +76,14 @@ class Unit:
 
     #This...doesn't work,Why?
     @classmethod
-    def Create(cls,Amount:int,Teams:list[Constants] = Constants.All):
-        if Teams == Constants.All:
+    def Create(cls,Amount:int,Team:Constants = Constants.All):
+        if Team == Constants.All:
             for ATeam in cls.Units:
                 for i in range(Amount):
                     cls.Units[ATeam].append(Unit(randint(4,7),randint(14,20),ATeam))
-                    print(len(cls.Units[ATeam]))
         else:
-            for Team in Teams:
-                for i in range(Amount):
-                    cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team))
-                    print(len(cls.Units[Team]))
+            for i in range(Amount):
+                cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team))
 
     @classmethod #ur a dumb ass bitch
     def Display(cls,Teams:list[Constants] = Constants.All):
@@ -154,7 +151,7 @@ def Main():
     print("QTBS: First Concept.")
     print("Setting Up...")
 
-    Unit.Create(2,[Constants.Friendly,Constants.Hostile])
+    Unit.Create(2)
     # Player = Controller(Constants.Friendly)
     # Enemy = Controller(Constants.Hostile)
 
