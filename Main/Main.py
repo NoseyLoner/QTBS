@@ -74,7 +74,6 @@ class Unit:
         elif len(cls.Units[Constants.Hostile]) == 0:
             raise GameOverException("Hostile Units Win!")  
 
-    #This...doesn't work,Why?
     @classmethod
     def Create(cls,Amount:int,Team:Constants = Constants.All):
         if Team == Constants.All:
@@ -84,8 +83,9 @@ class Unit:
         else:
             for i in range(Amount):
                 cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team))
+                cls.Units[Team].pop()
 
-    @classmethod #ur a dumb ass bitch
+    @classmethod
     def Display(cls,Teams:list[Constants] = Constants.All):
         if Teams == Constants.All:
             for ATeam in cls.Units:
@@ -134,12 +134,12 @@ def Starter() -> bool:
     print("You guessed incorrectly! Enemy starts.\n")
     return False
 
-def Pause(Message:str = "Press any key to continue."):
+def Pause(Message:str = "Enter any key to continue: \n"):
     if os.name == "nt":
         print(Message)
         os.system("pause")
     else:
-        subprocess.run(f"read -p '{Message}'",shell = True)
+        input(Message)
 
 def Clear():
     if os.name == "nt":
@@ -151,7 +151,8 @@ def Main():
     print("QTBS: First Concept.")
     print("Setting Up...")
 
-    Unit.Create(2)
+    Unit.Create(3,Constants.Friendly)
+    Unit.Create(3,Constants.Hostile)
     # Player = Controller(Constants.Friendly)
     # Enemy = Controller(Constants.Hostile)
 
@@ -179,7 +180,6 @@ def Main():
             print(Winner)
             break
         Unit.Display([Constants.Friendly,Constants.Hostile])
-        sleep(1)
         if Turn:
             print("Player's Turn:")
             while True:
@@ -214,18 +214,17 @@ def Main():
                     print(f"You have killed Unit {TargetIndex}!\n")
             else:
                 print(f"\nYou Healed Unit {Target} with Unit {Attacker} and healed {Unit.FriendlyUnits[Attacker - 1].Damage} health.\n")
-            sleep(1)
-
+            Pause()
         else:
             print("Enemy's Turn:")
             Ratio = Unit.Health(Constants.Hostile)
             Ratio = round(Ratio[0]/Ratio[1],2) * 100
             Attack = Chance(Ratio)
             Strongest = Unit.Strongest(Constants.Hostile)
-            StrongestIndex:int = (Unit.HostileUnits.index(Strongest) + 1)
+            StrongestIndex:int = (Unit.Units[Constants.Hostile].index(Strongest) + 1)
             if Attack:
                 Target = choice(Unit.Units[Constants.Friendly])
-                TargetIndex = (Unit.FriendlyUnits.index(Target) + 1)
+                TargetIndex = (Unit.Units[Constants.Friendly].index(Target) + 1)
                 Strongest.Attack(Target)
                 sleep(2)
                 print(f"Enemy Attacked Unit {TargetIndex} with Unit {StrongestIndex},dealt {Strongest.Damage} damage.\n")
@@ -245,9 +244,9 @@ def Main():
         Unit.Check()
         Clearer += 1
         if Clearer % 2 == 0:
-            sleep(2)
-            Clear()
-            Clearer = 0
+            Choice = input("Press 'C' to clear the screen or any other key to continue: ").capitalize()
+            if Choice == "C":
+                Clear()
     
     print("Thank you for playing QTBS!")
     sleep(1)
