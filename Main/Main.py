@@ -4,6 +4,11 @@ from time import sleep
 from random import randint,choice
 from Constants import Constants
 
+# Important Object Orientated Programming TODO:
+#     - Add Abstract Base Class (ABC's) for Status Effects
+#     - Add Singleton Observer Perchance? (two birds one stone)
+#     - Add Enums for Constanst (DONE)
+
 class GameOverException(Exception):
     pass
 
