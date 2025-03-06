@@ -6,8 +6,21 @@ from Constants import Constants
 
 # Important Object Orientated Programming TODO:
 #     - Add Abstract Base Class (ABC's) for Status Effects
-#     - Add Singleton Observer Perchance? (two birds one stone)
+#     - Add Singleton & Multiton Observer Pattern for Status Effects
 #     - Add Enums for Constanst (DONE)
+
+# Below classes are not complete as of now, will be completed in the future for status effects
+class Singleton(type):
+    
+    _instances = {}
+
+    def __call__(cls,*args,**kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args,**kwargs)
+        return cls._instances[cls]
+    
+class Multiton(type):
+    pass
 
 class GameOverException(Exception):
     pass
@@ -23,6 +36,7 @@ class Unit:
         self.MaxHealth = MaxHealth
         self.Health = MaxHealth
         self.Team = Team
+        self.StatusEffects = []
         
     def Attack(self,Target):
         if Target.Team is not self.Team:
@@ -115,43 +129,81 @@ class Controller:
     def __init__(self,Team):
         self.Team = Team
 
-# Might merge with future enemy class
-def Chance(Probability:int):
-    Result = randint(1,100)
-    if Result <= Probability:
-        return True
-    return False
+class Tools:
 
-def Starter() -> bool:
-    Coin = randint(0,1)
-    Valid = [0,1]
-    while True:
-        try:
-            Guess = int(input("Guess the coin flip! 0 or 1: "))
-            if Guess in Valid:
-                break
-            print("Invalid input,please try again.")
-        except ValueError:
-            print("Invalid input,please try again.")
-    if Guess == Coin:
-        print("You guessed correctly! You start.\n")
-        return True
-    print("You guessed incorrectly! Enemy starts.\n")
-    return False
+    @staticmethod
+    def Chance(Probability:int):
+        Result = randint(1,100)
+        if Result <= Probability:
+            return True
+        return False
 
-def Pause(Message:str = "Enter any key to continue: \n"):
-    if os.name == "nt":
-        print(Message)
-        os.system("pause")
-    else:
-        input(Message)
+    @staticmethod
+    def Starter() -> bool:
+        Coin = randint(0,1)
+        Valid = [0,1]
+        while True:
+            try:
+                Guess = int(input("Guess the coin flip! 0 or 1: "))
+                if Guess in Valid:
+                    break
+                print("Invalid input,please try again.")
+            except ValueError:
+                print("Invalid input,please try again.")
+        if Guess == Coin:
+            print("You guessed correctly! You start.\n")
+            return True
+        print("You guessed incorrectly! Enemy starts.\n")
+        return False
 
-def Clear():
-    if os.name == "nt":
-        os.system("cls")
-    else:
-        os.system("clear")
+    @staticmethod
+    def Tutorial():
+        print("Welcome to QTBS!")
+        input("Every line in this tutrial is an input, so press enter to continue. ")
+        input("QTBS stands for Quantum Turn Based Strategy, although right now it's just a turn based strategy. ")
+        input("The game is simple, you have 3 units and so does the enemy. ")
+        input("You can attack the enemy units or heal your own units. ")
+        input("The enemy can do the same, and will do so based on how low it's units are. ")
+        input("The game ends when either you or the enemy have no units left. ")
+        input("After every turn, you can exit the game. ")
+        input("After every 2 turns, you can clear the screen. ")
+        input("When you're ready, press enter to start the game. ")
+        Tools.Wait(StartingMessage = "Starting Game...")
 
+    @staticmethod
+    def Pause(Message:str = "Press enter to continue: "):
+        if os.name == "nt":
+            print(Message)
+            os.system("pause")
+        else:
+            input(Message)
+
+    @staticmethod
+    def Clear():
+        if os.name == "nt":
+            os.system("cls")
+        else:
+            os.system("clear")
+    
+    @staticmethod
+    def Exit():
+        Tools.Clear()
+        print("Thank you for playing QTBS!")
+        sleep(3)
+        exit()
+
+    @staticmethod
+    def Wait(Time:int = 3,StartingMessage:str = None,Counter:str = "...",ClosingMessage:str = "Ready!"):
+        if StartingMessage:
+            print(StartingMessage)
+        for i in range(Time):
+            print(Counter)
+            sleep(1)
+        if ClosingMessage:
+            print(ClosingMessage)
+        sleep(1)
+        Tools.Clear()
+        
 def Main():
     print("QTBS: First Concept.")
     print("Setting Up...")
@@ -161,19 +213,17 @@ def Main():
     # Player = Controller(Constants.Friendly)
     # Enemy = Controller(Constants.Hostile)
 
-    for i in range(3):
-        print("...")
-        sleep(1)
+    Tools.Wait()
     
-    print("Ready!")
-    sleep(1)
-    Clear()
+    Tutor = input("Press 'T' to play the tutorial or any other key to skip: ").capitalize()
+    if Tutor == "T":
+        Tools.Wait(StartingMessage = "Starting Tutorial...")
+        Tools.Tutorial()
 
-    print("Welcome to QTBS!")
     sleep(1)
-    Turn = Starter()
+    Turn = Tools.Starter()
     sleep(1)
-    Clear()
+    Tools.Clear()
     Clearer = 0
     sleep(1)
     Sides = {"E":Constants.Hostile,"F":Constants.Friendly}
@@ -196,7 +246,7 @@ def Main():
                     print("Invalid input, please try again.")
             while True:
                 try:
-                    TargetIndex = int(input("Enter the number of the unit you want to attack: "))
+                    TargetIndex = int(input("Enter the number of the unit you want to target: "))
                     if TargetIndex not in range(1,len(Unit.Units[Side]) + 1):
                         raise ValueError
                     break
@@ -213,48 +263,58 @@ def Main():
             Attacker = Unit.Units[Constants.Friendly][AttackerIndex - 1]
             Target = Unit.Units[Side][TargetIndex - 1]
             Attacker.Attack(Target)
+            sleep(1)
             if Side == Constants.Hostile:
-                print(f"\nYou Attacked Unit {TargetIndex} with Unit {AttackerIndex} and dealt {Attacker.Damage} damage.\n")
+                print(f"\nYou Attacked Unit {TargetIndex} with Unit {AttackerIndex} and dealt {Attacker.Damage} damage.")
                 if not Target.Alive:
-                    print(f"You have killed Unit {TargetIndex}!\n")
+                    print(f"You have killed Unit {TargetIndex}!")
             else:
-                print(f"\nYou Healed Unit {Target} with Unit {Attacker} and healed {Unit.FriendlyUnits[Attacker - 1].Damage} health.\n")
-            Pause()
+                print(f"\nYou Healed Unit {Target} with Unit {Attacker} and healed {Unit.FriendlyUnits[Attacker - 1].Damage} health.")
+            Tools.Pause()
         else:
             print("Enemy's Turn:")
             Ratio = Unit.Health(Constants.Hostile)
             Ratio = round(Ratio[0]/Ratio[1],2) * 100
-            Attack = Chance(Ratio)
+            Attack = Tools.Chance(Ratio)
             Strongest = Unit.Strongest(Constants.Hostile)
             StrongestIndex:int = (Unit.Units[Constants.Hostile].index(Strongest) + 1)
             if Attack:
                 Target = choice(Unit.Units[Constants.Friendly])
                 TargetIndex = (Unit.Units[Constants.Friendly].index(Target) + 1)
                 Strongest.Attack(Target)
-                sleep(2)
-                print(f"Enemy Attacked Unit {TargetIndex} with Unit {StrongestIndex},dealt {Strongest.Damage} damage.\n")
+                sleep(1)
+                print(f"Enemy Attacked Unit {TargetIndex} with Unit {StrongestIndex},dealt {Strongest.Damage} damage.")
                 sleep(1)
                 if not Target.Alive:
-                    print(f"The Enemy has killed Unit {TargetIndex}!\n")
+                    print(f"The Enemy has killed Unit {TargetIndex}!")
                 sleep(1)
             else:
                 Weakest = Unit.Weakest(Constants.Hostile)
-                WeakestIndex = (Unit.HostileUnits.index(Weakest) + 1)
+                WeakestIndex = (Unit.Units[Constants.Hostile].index(Weakest) + 1)
                 Strongest.Attack(Weakest)
-                sleep(2)
-                print(f"Enemy Healed Unit {WeakestIndex} with Unit {StrongestIndex},healed {Strongest.Damage} health.\n")
                 sleep(1)
+                print(f"Enemy Healed Unit {WeakestIndex} with Unit {StrongestIndex},healed {Strongest.Damage} health.")
+                sleep(1)
+            Tools.Pause()
         
+        Exit = input("Press 'E' to exit the game or any other key to continue: ").capitalize()
+        if Exit == "E":
+            Tools.Exit()
+            sleep(1)
+
         Turn = not Turn
         Unit.Check()
         Clearer += 1
         if Clearer % 2 == 0:
             Choice = input("Press 'C' to clear the screen or any other key to continue: ").capitalize()
             if Choice == "C":
-                Clear()
+                Tools.Clear()
+                print("Screen Cleared!")
+                sleep(1)
+                Tools.Clear()
+
+        print("\n")
     
-    print("Thank you for playing QTBS!")
-    sleep(1)
-    exit()
+    Tools.Exit()
 
 Main()
