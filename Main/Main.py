@@ -3,6 +3,7 @@ import subprocess
 from time import sleep
 from random import randint,choice
 from Constants import Constants
+from StatusEffects import StatusEffects
 
 # Important Object Orientated Programming TODO:
 #     - Add Abstract Base Class (ABC's) for Status Effects
@@ -18,6 +19,9 @@ class Singleton(type):
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args,**kwargs)
         return cls._instances[cls]
+    
+class GameObserver(metaclass = Singleton):
+    pass
     
 class Multiton(type):
     pass
