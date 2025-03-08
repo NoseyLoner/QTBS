@@ -1,19 +1,32 @@
 from abc import ABC, abstractmethod
 from Main.Main import Unit
 
+# Important Status Effects Info:
+#   - Are currently a sure hit, but will be changed to a chance to hit
+#   - Are added to unit.Affected, but apllied at the end of the turn
+#   - Are Missing Important Info:
+#       - Duration
+#       - Chance to hit
+#       - Effect of stacking
+#       - Synergies & Dissonances
+
 class StatusEffect(ABC):
 
-    @abstractmethod
-    def __str__(self):
-        pass
+    _Name:str = ""
+
+    @property
+    def Name(self):
+        return self._Name
 
     @classmethod
     @abstractmethod
-    def apply(self, target:Unit):
+    def apply(self):
         pass
 
-class Base(StatusEffect):
+class Poison(StatusEffect):
     
-    def Apply(self, target:Unit):
-        pass
+    _Name = "Poison"
 
+    # Example, not suppose to be actual implementation
+    def Apply(self,Target:Unit):
+        Target.Health -= 1
