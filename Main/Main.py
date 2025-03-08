@@ -2,13 +2,29 @@ import os
 from time import sleep
 from random import randint,choice
 from Constants import Constants
-from Main.StatusEffects import *
+from StatusEffects import *
+from Observers import Director,Controller
+
+# Game Progress:
+#   For the text based 1.0, as of now (08/03/25) mostly everything up to quantum stuff has been implemented in code, and just needs actully substance/testing:
+#       - Basic game concept (Done)
+#       - Status Effects (90% done on implementation, now just ideas for effects are needed)
+#       - Quantum Game Loop (Entanglement,(Superpositon?),Collapse) (Next)
+#   (Note Quantum stuff will be planed out first in the book before any code is written, as will likely require changing everything)
+#   Once all of the above is done, the only thing left is to make sure the game is actully fun (as right now it is boring, tedious and repetitive) and then release
+#   Then, visuals will begin with the help of Pygame
 
 # Important Object Orientated Programming TODO:
-#     - Add Abstract Base Class (ABC's) for Status Effects
-#     - Add Singleton & Multiton Observer Pattern for Status Effects (DONE)
+#     - Add Abstract Base Class (ABC's) for Status Effects (DONE)
+#     - Add Singleton & Multiton Observer Pattern for Status Effect handiling and game controllers (DONE)
 #     - Add Enums for Constanst (Ongoing, but Done)
-  
+
+Administrator = Director()
+Player = Controller(Constants.Friendly)
+Enemy = Controller(Constants.Hostile)
+Administrator.Attach(Player)
+Administrator.Attach(Enemy)
+
 class GameOverException(Exception):
     pass
 
@@ -16,28 +32,47 @@ class Unit:
 
     Units:dict[Constants,list['Unit']] = {Constants.Friendly:[],Constants.Hostile:[],Constants.Passive:[]}
 
-    def __init__(self,Damage:int,MaxHealth:int,Team:Constants,Applies:dict[Constants,list[StatusEffect]]):
+    def __init__(self,Damage:int,MaxHealth:int,Team:Constants,Name:str,Applies:dict[Constants,list[StatusEffect]] = {}):
         Unit.Units[Team].append(self)
-        self.Alive = True
+        self._Alive = True
         self.Damage = Damage
         self.MaxHealth = MaxHealth
         self.Health = MaxHealth
         self.Team = Team
         self.Applies = Applies
+        self.Name = Name
         self.Affected:list[StatusEffect] = []
         
-    def Attack(self,Target):
+    @property
+    def Alive(self):
+        return self._Alive
+
+    @Alive.setter
+    def Alive(self,Status:bool):
+        # Add stuff here when quantum part is added
+        if Status:
+            pass
+        else:
+            del self
+
+    def Attack(self,Target:Unit):
         if Target.Team is not self.Team:
             Target.Health -= self.Damage
-            #for now, status effects are sure hit, but will be chance based later on
+            Administrator.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has attacked {Target.Team.value} {Target.Name}.")
+            # for now, status effects are sure hit, but will be chance based later on
             if self.Applies[Constants.Nerfs]:
                 for Effect in self.Applies[Constants.Nerfs]:
                     Effect.Apply(Target)
+                    # Should change message to indicate if effect is negative or positive
+                    Administrator.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has inflicted {Target.Team.value} {Target.Name} with {Effect.Name}.")
         else:
             Target.Health += self.Damage
+            # Same as above for buffs
             if self.Applies[Constants.Buffs]:
                 for Effect in self.Applies[Constants.Buffs]:
                     Effect.Apply(Target)
+                    # Should change messages to indicate if effect is negative or positive
+                    Administrator.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has inflicted {Target.Team.value} {Target.Name} with {Effect.Name}.")
             if Target.Health > Target.MaxHealth:
                 Target.Health = Target.MaxHealth
 
@@ -70,6 +105,7 @@ class Unit:
             MaxTotal += Unit.MaxHealth
         return (HealthTotal,MaxTotal)
     
+    # Change name to Collapse when quantum stuff is added
     @classmethod
     def Check(cls,Team:Constants = Constants.All):
         if Team == Constants.All:
@@ -88,15 +124,16 @@ class Unit:
         elif len(cls.Units[Constants.Hostile]) == 0:
             raise GameOverException("Hostile Units Win!")  
 
+    # Need some way to handle Status Effects, so either change or make into factory class
     @classmethod
     def Create(cls,Amount:int,Team:Constants = Constants.All):
         if Team == Constants.All:
             for ATeam in cls.Units:
                 for i in range(Amount):
-                    cls.Units[ATeam].append(Unit(randint(4,7),randint(14,20),ATeam))
+                    cls.Units[ATeam].append(Unit(randint(4,7),randint(14,20),ATeam,f"Unit {i + 1}"))
         else:
             for i in range(Amount):
-                cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team))
+                cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team,f"Unit {i + 1}"))
                 cls.Units[Team].pop()
 
     @classmethod
@@ -104,21 +141,19 @@ class Unit:
         if Teams == Constants.All:
             for ATeam in cls.Units:
                 print("-" * 28)
-                print(f"{ATeam.name} Units: {len(cls.Units[ATeam])}/3")
+                print(f"{ATeam.value} Units: {len(cls.Units[ATeam])}/3")
                 for AUnit in cls.Units[ATeam]:
-                    print(f"Unit {cls.Units[ATeam].index(AUnit) + 1}: Health: {AUnit.Health}/{AUnit.MaxHealth}, Damage: {AUnit.Damage}")
+                    print(f"{AUnit.Name}: Health: {AUnit.Health}/{AUnit.MaxHealth}, Damage: {AUnit.Damage}")
                 print("-" * 28,"\n")
                 sleep(1)
         else:
             for Team in Teams:
                 print("-" * 28)
-                print(f"{Team.name} Units: {len(cls.Units[Team])}/3")
+                print(f"{Team.value} Units: {len(cls.Units[Team])}/3")
                 for Unit in cls.Units[Team]:
-                    print(f"Unit {cls.Units[Team].index(Unit) + 1}: Health: {Unit.Health}/{Unit.MaxHealth}, Damage: {Unit.Damage}")
+                    print(f"{AUnit.Name}: Health: {Unit.Health}/{Unit.MaxHealth}, Damage: {Unit.Damage}")
                 print("-" * 28,"\n")
                 sleep(1)
-
-
 
 class Tools:
 
@@ -195,14 +230,15 @@ class Tools:
         sleep(1)
         Tools.Clear()
         
+# WARNING!!!
+# The main function still notifies the player of what is going on without the Administrator,controller or the 'Name' attribute of the unit class
+# This MUST be change before the code can be run or any other features are added
 def Main():
     print("QTBS: First Concept.")
     print("Setting Up...")
 
     Unit.Create(3,Constants.Friendly)
     Unit.Create(3,Constants.Hostile)
-    # Player = Controller(Constants.Friendly)
-    # Enemy = Controller(Constants.Hostile)
 
     Tools.Wait()
     
