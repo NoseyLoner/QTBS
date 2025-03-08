@@ -9,6 +9,7 @@ from Main.Main import Unit
 #       - Chance to hit
 #       - Effect of stacking
 #       - Synergies & Dissonances
+#   - Might need an __init__ method to handle stack and potentially level in future
 
 class StatusEffect(ABC):
 
