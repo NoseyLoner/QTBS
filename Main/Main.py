@@ -1,31 +1,14 @@
 import os
-import subprocess
 from time import sleep
 from random import randint,choice
 from Constants import Constants
-from StatusEffects import StatusEffects
+from Main.StatusEffects import *
 
 # Important Object Orientated Programming TODO:
 #     - Add Abstract Base Class (ABC's) for Status Effects
-#     - Add Singleton & Multiton Observer Pattern for Status Effects
-#     - Add Enums for Constanst (DONE)
-
-# Below classes are not complete as of now, will be completed in the future for status effects
-class Singleton(type):
-    
-    _instances = {}
-
-    def __call__(cls,*args,**kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super().__call__(*args,**kwargs)
-        return cls._instances[cls]
-    
-class GameObserver(metaclass = Singleton):
-    pass
-    
-class Multiton(type):
-    pass
-
+#     - Add Singleton & Multiton Observer Pattern for Status Effects (DONE)
+#     - Add Enums for Constanst (Ongoing, but Done)
+  
 class GameOverException(Exception):
     pass
 
@@ -33,20 +16,28 @@ class Unit:
 
     Units:dict[Constants,list['Unit']] = {Constants.Friendly:[],Constants.Hostile:[],Constants.Passive:[]}
 
-    def __init__(self,Damage:int,MaxHealth:int,Team:Constants):
+    def __init__(self,Damage:int,MaxHealth:int,Team:Constants,Applies:dict[Constants,list[StatusEffect]]):
         Unit.Units[Team].append(self)
         self.Alive = True
         self.Damage = Damage
         self.MaxHealth = MaxHealth
         self.Health = MaxHealth
         self.Team = Team
-        self.StatusEffects = []
+        self.Applies = Applies
+        self.Affected:list[StatusEffect] = []
         
     def Attack(self,Target):
         if Target.Team is not self.Team:
             Target.Health -= self.Damage
+            #for now, status effects are sure hit, but will be chance based later on
+            if self.Applies[Constants.Nerfs]:
+                for Effect in self.Applies[Constants.Nerfs]:
+                    Effect.Apply(Target)
         else:
             Target.Health += self.Damage
+            if self.Applies[Constants.Buffs]:
+                for Effect in self.Applies[Constants.Buffs]:
+                    Effect.Apply(Target)
             if Target.Health > Target.MaxHealth:
                 Target.Health = Target.MaxHealth
 
@@ -71,7 +62,7 @@ class Unit:
     # Might change if enemy AI is changed
     # Healths dictionary was here before, might be useful
     @classmethod
-    def Health(cls,Team):
+    def Healths(cls,Team):
         HealthTotal = 0
         MaxTotal = 0
         for Unit in cls.Units[Team]:
@@ -127,11 +118,7 @@ class Unit:
                 print("-" * 28,"\n")
                 sleep(1)
 
-# Make Useful 
-class Controller:
-    
-    def __init__(self,Team):
-        self.Team = Team
+
 
 class Tools:
 
@@ -321,4 +308,5 @@ def Main():
     
     Tools.Exit()
 
-Main()
+if __name__ == "__main__":
+    Main()
