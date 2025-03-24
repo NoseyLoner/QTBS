@@ -32,7 +32,7 @@ class Unit:
 
     Units:dict[Constants,list['Unit']] = {Constants.Friendly:[],Constants.Hostile:[],Constants.Passive:[]}
 
-    def __init__(self,Damage:int,MaxHealth:int,Team:Constants,Name:str,Applies:dict[Constants,list['StatusEffect']] = {}):
+    def __init__(self,Damage:int,MaxHealth:int,Team:Constants,Name:str,Applies:dict[Constants,list['StatusEffect']] = {Constants.Buffs:[],Constants.Nerfs:[]}):
         Unit.Units[Team].append(self)
         self._Alive = True
         self.Damage = Damage
@@ -63,16 +63,14 @@ class Unit:
             if self.Applies[Constants.Nerfs]:
                 for Effect in self.Applies[Constants.Nerfs]:
                     Effect.Apply(Target)
-                    # Should change message to indicate if effect is negative or positive
-                    Administrator.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has inflicted {Target.Team.value} {Target.Name} with {Effect.Name}.")
+                    Administrator.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has nerfed {Target.Team.value} {Target.Name} with {Effect.Name}.")
         else:
             Target.Health += self.Damage
             # Same as above for buffs
             if self.Applies[Constants.Buffs]:
                 for Effect in self.Applies[Constants.Buffs]:
                     Effect.Apply(Target)
-                    # Should change messages to indicate if effect is negative or positive
-                    Administrator.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has inflicted {Target.Team.value} {Target.Name} with {Effect.Name}.")
+                    Administrator.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has buffed {Target.Team.value} {Target.Name} with {Effect.Name}.")
             if Target.Health > Target.MaxHealth:
                 Target.Health = Target.MaxHealth
 
@@ -124,18 +122,6 @@ class Unit:
         elif len(cls.Units[Constants.Hostile]) == 0:
             raise GameOverException("Hostile Units Win!")  
 
-    # Need some way to handle Status Effects, so either change or make into factory class
-    @classmethod
-    def Create(cls,Amount:int,Team:Constants = Constants.All):
-        if Team == Constants.All:
-            for ATeam in cls.Units:
-                for i in range(Amount):
-                    cls.Units[ATeam].append(Unit(randint(4,7),randint(14,20),ATeam,f"Unit {i + 1}"))
-        else:
-            for i in range(Amount):
-                cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team,f"Unit {i + 1}"))
-                cls.Units[Team].pop()
-
     @classmethod
     def Display(cls,Teams:list[Constants] = Constants.All):
         if Teams == Constants.All:
@@ -154,6 +140,31 @@ class Unit:
                     print(f"{Unit.Name}: Health: {Unit.Health}/{Unit.MaxHealth}, Damage: {Unit.Damage}")
                 print("-" * 28,"\n")
                 sleep(1)
+
+    # This is fine,i think?
+    @classmethod
+    def Create(cls,Amount:int,Team:Constants = Constants.All):
+        if Team == Constants.All:
+            for ATeam in cls.Units:
+                for i in range(Amount):
+                    cls.Units[ATeam].append(Unit(randint(4,7),randint(14,20),ATeam,f"Unit {i + 1}"))
+        else:
+            for i in range(Amount):
+                cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team,f"Unit {i + 1}"))
+                cls.Units[Team].pop()
+
+    # Might change the name, I want it to sound cooler
+    # If your wondering why the parametera are called Fish & Sheep, it's because i needed words that stay the same when pluralised
+    # Triple nested...not sure how I feel about that
+    # Yeah this code makes no f***ing sense lol
+    @classmethod
+    def Assign(Fish:dict[Constants,list[int]],Sheep:list[StatusEffect],Sign:Constants):
+        for Team in Fish.keys():
+            FTeam = Fish[Team]
+            for UnitNumber in FTeam:
+                IUnit = Unit.Units[Team][UnitNumber - 1]
+                for Effect in Sheep:
+                    IUnit.Applies[Sign].append(Effect)
 
 class Tools:
 
@@ -213,6 +224,8 @@ class Tools:
     
     @staticmethod
     def Exit():
+        print("Exiting...")
+        sleep(1)
         Tools.Clear()
         print("Thank you for playing QTBS!")
         sleep(3)
@@ -304,10 +317,8 @@ def Main():
             Ratio = round(Ratio[0]/Ratio[1],2) * 100
             Attack = Tools.Chance(Ratio)
             Strongest = Unit.Strongest(Constants.Hostile)
-            StrongestIndex:int = (Unit.Units[Constants.Hostile].index(Strongest) + 1)
             if Attack:
                 Target = choice(Unit.Units[Constants.Friendly])
-                TargetIndex = (Unit.Units[Constants.Friendly].index(Target) + 1)
                 Strongest.Attack(Target)
                 sleep(1)
                 print(f"Enemy Attacked {Target.Name} with {Strongest.Name},dealt {Strongest.Damage} damage.")
@@ -317,7 +328,6 @@ def Main():
                 sleep(1)
             else:
                 Weakest = Unit.Weakest(Constants.Hostile)
-                WeakestIndex = (Unit.Units[Constants.Hostile].index(Weakest) + 1)
                 Strongest.Attack(Weakest)
                 sleep(1)
                 print(f"Enemy Healed {Weakest.Name} with {Strongest.Name},healed {Strongest.Damage} health.")
@@ -327,7 +337,6 @@ def Main():
         Exit = input("Press 'E' to exit the game or any other key to continue: ").capitalize()
         if Exit == "E":
             Tools.Exit()
-            sleep(1)
 
         Turn = not Turn
         Unit.Check()
