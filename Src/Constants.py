@@ -11,5 +11,6 @@ class Constants(Enum):
     #Effect Constants
     Buffs = "Buffs"
     Nerfs = "Nerfs"
+    Null = "Null"
 
     #...
