@@ -61,6 +61,7 @@ class Controller(Observer,metaclass = Multiton):
                 print(Message)
 
     # This doesn't work
+    # I think it's working now though,maybe...
     def Update(self,Unit:str,Message:str):
         if Unit not in self.Messages:
             self.Messages[Unit] = []    
