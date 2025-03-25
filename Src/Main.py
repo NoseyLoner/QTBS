@@ -8,7 +8,7 @@ from Observers import Director,Controller
 # Game Progress:
 #   For the text based 1.0, as of now (08/03/25) mostly everything up to quantum stuff has been implemented in code, and just needs actully substance/testing:
 #       - Basic game concept (Done)
-#       - Status Effects (90% done on implementation, now just ideas for effects are needed)
+#       - Status Effects (Done, ideas will be added with the quantum stuff and will be planned out in the book)
 #       - Quantum Game Loop (Entanglement,(Superpositon?),Collapse) (Next)
 #   (Note Quantum stuff will be planed out first in the book before any code is written, as will likely require changing everything)
 #   Once all of the above is done, the only thing left is to make sure the game is actully fun (as right now it is boring, tedious and repetitive) and then release
@@ -17,7 +17,7 @@ from Observers import Director,Controller
 # Important Object Orientated Programming TODO:
 #     - Add Abstract Base Class (ABC's) for Status Effects (DONE)
 #     - Add Singleton & Multiton Observer Pattern for Status Effect handiling and game controllers (DONE)
-#     - Add Enums for Constanst (Ongoing, but Done)
+#     - Add Enums for Constanst (DONE)
 
 Administrator = Director()
 Player = Controller(Constants.Friendly)
@@ -32,6 +32,7 @@ class Unit:
 
     Units:dict[Constants,list['Unit']] = {Constants.Friendly:[],Constants.Hostile:[],Constants.Passive:[]}
 
+    # Applies argument might be redundant
     def __init__(self,Damage:int,MaxHealth:int,Team:Constants,Name:str,Applies:dict[Constants,list['StatusEffect']] = {Constants.Buffs:[],Constants.Nerfs:[]}):
         Unit.Units[Team].append(self)
         self._Alive = True
@@ -153,18 +154,17 @@ class Unit:
                 cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team,f"Unit {i + 1}"))
                 cls.Units[Team].pop()
 
-    # Might change the name, I want it to sound cooler
     # If your wondering why the parametera are called Fish & Sheep, it's because i needed words that stay the same when pluralised
     # Triple nested...not sure how I feel about that
     # Yeah this code makes no f***ing sense lol
     @classmethod
-    def Assign(Fish:dict[Constants,list[int]],Sheep:list[StatusEffect],Sign:Constants):
+    def Assign(Fish:dict[Constants,list[int]],Sheep:list['StatusEffect']):
         for Team in Fish.keys():
             FTeam = Fish[Team]
             for UnitNumber in FTeam:
                 IUnit = Unit.Units[Team][UnitNumber - 1]
                 for Effect in Sheep:
-                    IUnit.Applies[Sign].append(Effect)
+                    IUnit.Applies[Effect.Sign].append(Effect)
 
 class Tools:
 
