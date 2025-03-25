@@ -26,12 +26,13 @@ class StatusEffect(ABC):
 
     @classmethod
     @abstractmethod
-    def apply(self):
+    def apply(cls):
         pass
 
 class Poison(StatusEffect):
     
     _Name = "Poison"
+    Sign = Constants.Nerf
 
     # Example, not suppose to be actual implementation
     def Apply(self,Target:'Main.Unit'):
