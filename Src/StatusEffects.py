@@ -32,7 +32,7 @@ class StatusEffect(ABC):
 class Poison(StatusEffect):
     
     _Name = "Poison"
-    Sign = Constants.Nerf
+    Sign = Constants.Nerfs
 
     # Example, not suppose to be actual implementation
     def Apply(self,Target:'Main.Unit'):

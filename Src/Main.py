@@ -243,9 +243,8 @@ class Tools:
         sleep(1)
         Tools.Clear()
         
-# WARNING!!!
-# The main function still notifies the player of what is going on without the Administrator,controller or the 'Name' attribute of the unit class
-# This MUST be change before the code can be run or any other features are added
+# The main function doesn't use the Administrator or Controllers to notify the player
+# This should be changed
 def Main():
     print("QTBS: First Concept.")
 
@@ -261,7 +260,6 @@ def Main():
 
     Tools.Clear()
     Turn = Tools.Starter()
-    sleep(1)
     Tools.Clear()
     Clearer = 0
     sleep(1)
@@ -310,7 +308,6 @@ def Main():
                     print(f"You have killed {Target.Name}!")
             else:
                 print(f"\nYou Healed {Target.Name} with {Attacker.Name} and healed {Attacker.Damage} health.")
-            Tools.Pause()
         else:
             print("Enemy's Turn:")
             Ratio = Unit.Healths(Constants.Hostile)
@@ -332,7 +329,6 @@ def Main():
                 sleep(1)
                 print(f"Enemy Healed {Weakest.Name} with {Strongest.Name},healed {Strongest.Damage} health.")
                 sleep(1)
-            Tools.Pause()
         
         Exit = input("Press 'E' to exit the game or any other key to continue: ").capitalize()
         if Exit == "E":
