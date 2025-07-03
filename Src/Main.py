@@ -157,6 +157,7 @@ class Unit:
     # If your wondering why the parametera are called Fish & Sheep, it's because i needed words that stay the same when pluralised
     # Triple nested...not sure how I feel about that
     # Yeah this code makes no f***ing sense lol
+    # Bro genuinely what is this sh*t
     @classmethod
     def Assign(Fish:dict[Constants,list[int]],Sheep:list['StatusEffect']):
         for Team in Fish.keys():
