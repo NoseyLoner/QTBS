@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-import Main
+from Main import Unit
 from Constants import Constants
 
 # Important Status Effects Info:
@@ -13,13 +13,30 @@ from Constants import Constants
 #   - Might need an __init__ method to handle stack and potentially level in future
 #   - They should also contain whether they are a buff or nerf, which has been started on below
 
+# Status Efects need a unit ID to work properly, the current system is temporary
 class StatusEffect(ABC):
 
     #Keeping private for now, but will probaly change later tbh
     _Name:str = ""
     Sign:Constants = Constants.Null
+    _Stats:dict[str:list[int]] = {}
 
-    #Why does this need to be a property?
+    @property
+    def Stats(self):
+        for Stat in self._Stats:
+            pass
+
+    def __init__(self,Unit:'Unit', Level:int = 1, Stacks:int = 1):
+        self.Unit = Unit
+        self.Level = Level
+        self.Stacks = Stacks
+
+    def __eq__(self, other):
+        if other.Name == self.Name:
+            return True
+        return False
+
+    # Might change this to not be a property in the future
     @property
     def Name(self):
         return self._Name
@@ -29,11 +46,16 @@ class StatusEffect(ABC):
     def apply(cls):
         pass
 
+    def Stack(self,Target:'Unit'):
+        if self in Target.Affected:
+            Previous = Target.Affected.index(self)
+            Previous.Stacks += 1
+
 class Poison(StatusEffect):
     
     _Name = "Poison"
     Sign = Constants.Nerfs
 
     # Example, not suppose to be actual implementation
-    def Apply(self,Target:'Main.Unit'):
+    def Apply(self,Target:'Unit'):
         Target.Health -= 1
