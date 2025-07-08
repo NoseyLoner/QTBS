@@ -28,6 +28,7 @@ Administrator.Attach(Enemy)
 class GameOverException(Exception):
     pass
 
+# Unit ID needs to be added!
 class Unit:
 
     Units:dict[Constants,list['Unit']] = {Constants.Friendly:[],Constants.Hostile:[],Constants.Passive:[]}
