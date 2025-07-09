@@ -1,5 +1,6 @@
 from Main import Unit
 from Constants import Constants
+import warnings
 
 # Important Status Effects Info:
 #   - Are currently a sure hit, but will be changed to a chance to hit
@@ -9,8 +10,9 @@ from Constants import Constants
 #       - Chance to hit
 #       - Effect of stacking
 #       - Synergies & Dissonances
-#   - Might need an __init__ method to handle stack and potentially level in future
-#   - They should also contain whether they are a buff or nerf, which has been started on below
+
+class NotImplemented(warnings):
+    pass
 
 # Status Efects need a unit ID to work properly, the current system is temporary
 # The above statement is probably not true, but unit ID is needed anyways
@@ -20,11 +22,13 @@ class StatusEffect():
     Name:str = ""
     Sign:Constants = Constants.Null
     Effects:list = []
+    Durations:list = []
 
     def __init__(self,Unit:'Unit', Level:int = 1, Stacks:int = 1):
         self.Unit = Unit
         self.Level = Level
         self.Stacks = Stacks
+        self.Turns = self.Durations[Level - 1] * Stacks
     
     def Effect1(self):
         pass
@@ -37,38 +41,57 @@ class StatusEffect():
 
     Effects = [Effect1, Effect2, Effect3]
 
-    # Might remove stack parameter
     @classmethod
     def Apply(cls,Target:'Unit', Level:int = 1, Stacks:int = 1):
-        Target.Affected.append(cls(Target, Level, Stacks))
+        Stack = False
+        for Effect in Target.Affected:
+            if isinstance(Effect,cls):
+                Stack = True
+                break
+        if Stack:
+            cls.Stack(Target,Effect,Level,Stacks)
+        else:
+            Target.Affected.append(cls(Target, Level, Stacks))
 
     def Effect(self,Target:'Unit'):
         self.Effects[self.Level - 1]()
+        self.Turns -= 1
+        if self.Turns <= 0:
+            Target.Affected.remove(self)
+            del self
 
     def __eq__(self, other:'StatusEffect'):
         if other.Name == self.Name:
             return True
         return False
     
-    # Might adpat to handle inter-level stacking
-    def Stack(self,Target:'Unit'):
-        if self in Target.Affected:
-            Previous = Target.Affected.index(self)
-            Previous.Stacks += 1
+    @classmethod
+    def Stack(cls,Target:'Unit',Instance:'StatusEffect',Level:int,Stacks:int):
+        if Instance.Level < Level:
+            Target.Affected.remove(Instance)
+            Target.Affected.append(cls(Target, Level, Stacks))
+        else:
+            Instance.Turns += cls.Durations[Level - 1] * Stacks
 
+# Some status effects may need additional features like unit ID or a chance system to be fully implemented
 class Burning(StatusEffect):
 
     Name:str = "Burning"
     Sign:Constants = Constants.Nerfs
+    Durations:list = [2,2,3]
 
+    # Randomly burning units isn't here yet
     def Burning1(self):
-        pass
+        self.Unit.Health -= 2
+        warnings.warn("Chance to burn has not been implemented yet in Burning1", NotImplemented)
 
     def Burning2(self):
-        pass
+        self.Unit.Health -= 3
+        warnings.warn("Chance to burn has not been implemented yet in Burning2", NotImplemented)
 
     def Burning3(self):
-        pass
+        self.Unit.Health -= 4
+        warnings.warn("Chance to burn and temporarily reducing damage has not been implemented yet in Burning3", NotImplemented)
 
     Effects = [Burning1, Burning2, Burning3]
 
