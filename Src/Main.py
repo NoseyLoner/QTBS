@@ -337,6 +337,7 @@ def Main():
             Tools.Exit()
 
         Turn = not Turn
+        # Need to add exception handling for this
         Unit.Check()
         Clearer += 1
         if Clearer % 2 == 0:
