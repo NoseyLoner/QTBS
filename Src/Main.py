@@ -337,8 +337,11 @@ def Main():
             Tools.Exit()
 
         Turn = not Turn
-        # Need to add exception handling for this
-        Unit.Check()
+        try:
+            Unit.Check()
+        except GameOverException as Winner:
+            print(Winner)
+            break
         Clearer += 1
         if Clearer % 2 == 0:
             Choice = input("Press 'C' to clear the screen or any other key to continue: ").capitalize()

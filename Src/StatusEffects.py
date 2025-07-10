@@ -1,4 +1,4 @@
-from Main import Unit
+from Main import Unit,Tools
 from Constants import Constants
 import warnings
 
@@ -89,9 +89,18 @@ class Burning(StatusEffect):
         self.Unit.Health -= 3
         warnings.warn("Chance to burn has not been implemented yet in Burning2", NotImplemented)
 
+    # Burn chance is set at 20% for now
+    Burnt:bool = False
     def Burning3(self):
         self.Unit.Health -= 4
-        warnings.warn("Chance to burn and temporarily reducing damage has not been implemented yet in Burning3", NotImplemented)
+        if self.Burnt:
+            self.Unit.Damage += 1
+            self.Burnt = False
+        if not self.Burnt:
+            if Tools.Chance(20):
+                self.Unit.Damage -= 1
+                self.Burnt = True
+        warnings.warn("Chance to burn has not been implemented yet in Burning3, and randomly reducing damage has a temporary solution", NotImplemented)
 
     Effects = [Burning1, Burning2, Burning3]
 
@@ -99,15 +108,34 @@ class Weakened(StatusEffect):
 
     Name:str = "Weakened"
     Sign:Constants = Constants.Nerfs
-
+    Durations:list = [2,2,3]
+    Weakened:bool = False
+    
     def Weakened1(self):
-        pass
+        if not self.Weakened:
+            self.Unit.Damage -= 2
+            self.Weakened = True
 
+    # Extra weaken chance is set at 20%
+    Extra:bool = False
     def Weakened2(self):
-        pass
+        if not self.Weakened:
+            self.Unit.Damage -= 3
+            self.Weakened = True
+            if self.Extra:
+                self.Unit.Damage += 1
+                self.Extra = False
+            if not self.Extra:
+                if Tools.Chance(20):
+                    self.Unit.Damage -= 1
+                    self.Extra = True
+        warnings.warn("Randomly reducing damage has a temporary solution in Weakened2, and as such in Weakened3", NotImplemented)
 
+    # Permanent damage reduction is set at 15%
     def Weakened3(self):
-        pass
+        self.Weakened2()
+        if Tools.Chance(15):
+            self.Unit.Damage -= 1
 
     Effects = [Weakened1, Weakened2, Weakened3]
 
@@ -143,7 +171,7 @@ class Targeted(StatusEffect):
 
     Effects = [Targeted1, Targeted2, Targeted3]
 
-# Changing name ti Luck might make more sense
+# Changing name to Luck might make more sense
 class Lucky(StatusEffect):
 
     Name:str = "Lucky"
