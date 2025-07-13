@@ -28,6 +28,9 @@ Administrator.Attach(Enemy)
 class GameOverException(Exception):
     pass
 
+def ApplyEffects(Unit:'Unit'):
+    ...
+
 # Unit ID needs to be added!
 class Unit:
 
@@ -67,14 +70,18 @@ class Unit:
                     Effect.Apply(Target)
                     Administrator.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has nerfed {Target.Team.value} {Target.Name} with {Effect.Name}.")
         else:
-            Target.Health += self.Damage
+            # When Enchantments are added, change this to allow overhealing if the unit has a certain level of mending
+            if Target.Health >= Target.MaxHealth:
+                # Might get rid of this message later
+                print(f"{Target.Name} Cannot be healed further.")
+            else:
+                Target.Health += self.Damage
             # Same as above for buffs
             if self.Applies[Constants.Buffs]:
                 for Effect in self.Applies[Constants.Buffs]:
                     Effect.Apply(Target)
                     Administrator.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has buffed {Target.Team.value} {Target.Name} with {Effect.Name}.")
-            if Target.Health > Target.MaxHealth:
-                Target.Health = Target.MaxHealth
+            
 
     @classmethod
     def Strongest(cls,Team:Constants) -> 'Unit':
