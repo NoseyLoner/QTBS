@@ -1,6 +1,7 @@
 from Main import Unit,Tools
 from Constants import Constants
 import warnings
+from random import choice
 
 # Important Status Effects Info:
 #   - Are currently a sure hit, but will be changed to a chance to hit
@@ -16,6 +17,7 @@ class NotImplemented(warnings):
 
 # Status Efects need a unit ID to work properly, the current system is temporary
 # The above statement is probably not true, but unit ID is needed anyways
+# Status Effects also need some kind of function or decorator to add them to the game loop
 class StatusEffect():
 
     # Stats was here, but it was removed, add it back if needed
@@ -45,7 +47,7 @@ class StatusEffect():
     def Apply(cls,Target:'Unit', Level:int = 1, Stacks:int = 1):
         Stack = False
         for Effect in Target.Affected:
-            if isinstance(Effect,cls):
+            if Effect.Name == cls.Name:
                 Stack = True
                 break
         if Stack:
@@ -53,17 +55,13 @@ class StatusEffect():
         else:
             Target.Affected.append(cls(Target, Level, Stacks))
 
+    # I might have to have seperate effect procedures for each effect to get rid of permanent effects
     def Effect(self,Target:'Unit'):
         self.Effects[self.Level - 1]()
         self.Turns -= 1
         if self.Turns <= 0:
             Target.Affected.remove(self)
             del self
-
-    def __eq__(self, other:'StatusEffect'):
-        if other.Name == self.Name:
-            return True
-        return False
     
     @classmethod
     def Stack(cls,Target:'Unit',Instance:'StatusEffect',Level:int,Stacks:int):
@@ -83,11 +81,11 @@ class Burning(StatusEffect):
     # Randomly burning units isn't here yet
     def Burning1(self):
         self.Unit.Health -= 2
-        warnings.warn("Chance to burn has not been implemented yet in Burning1", NotImplemented)
+        warnings.warn("Chance to burn has not been implemented yet in Burning1, even though it would be really easy to do...", NotImplemented)
 
     def Burning2(self):
         self.Unit.Health -= 3
-        warnings.warn("Chance to burn has not been implemented yet in Burning2", NotImplemented)
+        warnings.warn("Chance to burn has not been implemented yet in Burning2, even though it would be really easy to do...", NotImplemented)
 
     # Burn chance is set at 20% for now
     Burnt:bool = False
@@ -143,15 +141,37 @@ class Shocked(StatusEffect):
 
     Name:str = "Shocked"
     Sign:Constants = Constants.Nerfs
+    Durations:list  = [3,4,4]
 
+    # Chance to deal damage is set at 15% for Shocked1 & 2, and at 20% for Shocked3
     def Shocked1(self):
-        pass
+        if Tools.Chance(15):
+            self.Unit.Health -= 3
+        warnings.warn("Chance to miss has not been implemented yet in any Shocked effect", NotImplemented)
 
     def Shocked2(self):
-        pass
+        if Tools.Chance(15):
+            self.Unit.Health -= 3
+            if Tools.Chance(15):
+                Targets = 1
+                while Targets != 0:
+                    Possible = choice(Unit.Units[self.Unit.Team])
+                    if Possible != self.Unit:
+                        Possible.Health -= 1
+                        Targets -= 1
+        warnings.warn("Chance to miss has not been implemented yet in any Shocked effect", NotImplemented)
 
     def Shocked3(self):
-        pass
+        if Tools.Chance(20):
+            self.Unit.Health -= 4
+            if Tools.Chance(15):
+                Targets = choice([1, 2])
+                while Targets != 0:
+                    Possible = choice(Unit.Units[self.Unit.Team])
+                    if Possible != self.Unit:
+                        Possible.Health -= choice([1, 2])
+                        Targets -= 1
+        warnings.warn("Chance to miss has not been implemented yet in any Shocked effect", NotImplemented)
 
     Effects = [Shocked1, Shocked2, Shocked3]
 
@@ -159,15 +179,16 @@ class Targeted(StatusEffect):
 
     Name:str = "Targeted"
     Sign:Constants = Constants.Nerfs
+    Durations:list = [2,2,4]
 
     def Targeted1(self):
-        pass
+        warnings.warn("Targeted has not been implemented yet, as it requires status effects to be added to the game loop", NotImplemented)
 
     def Targeted2(self):
-        pass
+        warnings.warn("Targeted has not been implemented yet, as it requires status effects to be added to the game loop", NotImplemented)
 
     def Targeted3(self):
-        pass
+        warnings.warn("Targeted has not been implemented yet, as it requires status effects to be added to the game loop", NotImplemented)
 
     Effects = [Targeted1, Targeted2, Targeted3]
 
@@ -176,15 +197,16 @@ class Lucky(StatusEffect):
 
     Name:str = "Lucky"
     Sign:Constants = Constants.Buffs
+    Durations:list = [4,3,3]
 
     def Lucky1(self):
-        pass
+        warnings.warn("Lucky has not been implemented yet (I don't know how to, sorry!)", NotImplemented)
 
     def Lucky2(self):
-        pass
+        warnings.warn("Lucky has not been implemented yet (I don't know how to, sorry!)", NotImplemented)
 
     def Lucky3(self):
-        pass
+        warnings.warn("Lucky has not been implemented yet (I don't know how to, sorry!)", NotImplemented)
 
     Effects = [Lucky1, Lucky2, Lucky3]
 
@@ -192,15 +214,24 @@ class Healing(StatusEffect):
 
     Name:str = "Healing"
     Sign:Constants = Constants.Buffs
+    Durations:list = [3,3,3]
 
     def Healing1(self):
-        pass
+        self.Unit.Health += 3
+        if self.Unit.Health > self.Unit.MaxHealth:
+            self.Unit.Health = self.Unit.MaxHealth
 
     def Healing2(self):
-        pass
+        Comp1 = self.Unit.Health + 3
+        Comp2 = round(self.Unit.MaxHealth * 1.15,2)
+        self.Unit.Health = max(Comp1,Comp2)
+        if self.Unit.Health > self.Unit.MaxHealth:
+            self.Unit.Health = self.Unit.MaxHealth
 
     def Healing3(self):
-        pass
+        Comp1 = self.Unit.Health + 5
+        Comp2 = round(self.Unit.MaxHealth * 1.25,2)
+        self.Unit.Health = max(Comp1,Comp2)
 
     Effects = [Healing1, Healing2, Healing3]
 
@@ -210,13 +241,13 @@ class Armoured(StatusEffect):
     Sign:Constants = Constants.Buffs
 
     def Armoured1(self):
-        pass
+        warnings.warn("Armoured has not been implemented yet (I don't know how to, sorry!)", NotImplemented)
 
     def Armoured2(self):
-        pass
+        warnings.warn("Armoured has not been implemented yet (I don't know how to, sorry!)", NotImplemented)
 
     def Armoured3(self):
-        pass
+        warnings.warn("Armoured has not been implemented yet (I don't know how to, sorry!)", NotImplemented)
 
     Effects = [Armoured1, Armoured2, Armoured3]
 
