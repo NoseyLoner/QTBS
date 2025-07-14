@@ -223,14 +223,14 @@ class Healing(StatusEffect):
 
     def Healing2(self):
         Comp1 = self.Unit.Health + 3
-        Comp2 = round(self.Unit.MaxHealth * 1.15,2)
+        Comp2 = round(self.Unit.MaxHealth * 1.15)
         self.Unit.Health = max(Comp1,Comp2)
         if self.Unit.Health > self.Unit.MaxHealth:
             self.Unit.Health = self.Unit.MaxHealth
 
     def Healing3(self):
         Comp1 = self.Unit.Health + 5
-        Comp2 = round(self.Unit.MaxHealth * 1.25,2)
+        Comp2 = round(self.Unit.MaxHealth * 1.25)
         self.Unit.Health = max(Comp1,Comp2)
 
     Effects = [Healing1, Healing2, Healing3]
@@ -255,14 +255,31 @@ class Frenzied(StatusEffect):
 
     Name:str = "Frenzied"
     Sign:Constants = Constants.Buffs
+    Durations:list = [3,3,3]
+    Frenzed:bool = False
 
     def Frenzied1(self):
-        pass
+        if not self.Frenzed:
+            self.Unit.Damage = round(self.Unit.Damage * 1.1)
+            self.Unit.MaxHealth = round(self.Unit.MaxHealth * 0.9)
+            if self.Unit.Health > self.Unit.MaxHealth:
+                self.Unit.Health = self.Unit.MaxHealth
+            self.Frenzed = True
 
     def Frenzied2(self):
-        pass
+        if not self.Frenzed:
+            self.Unit.Damage = round(self.Unit.Damage * 1.2)
+            self.Unit.MaxHealth = round(self.Unit.MaxHealth * 0.8)
+            if self.Unit.Health > self.Unit.MaxHealth:
+                self.Unit.Health = self.Unit.MaxHealth
+            self.Frenzed = True
 
     def Frenzied3(self):
-        pass
+        if not self.Frenzed:
+            self.Unit.Damage = round(self.Unit.Damage * 1.4)
+            self.Unit.MaxHealth = round(self.Unit.MaxHealth * 0.6)
+            if self.Unit.Health > self.Unit.MaxHealth:
+                self.Unit.Health = self.Unit.MaxHealth
+            self.Frenzed = True
 
     Effects = [Frenzied1, Frenzied2, Frenzied3]
