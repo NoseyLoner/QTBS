@@ -1,7 +1,7 @@
-from Main import Unit,Tools
-from Constants import Constants
 import warnings
 from random import choice
+from Main import Unit,Tools
+from Constants import Constants
 
 # Important Status Effects Info:
 #   - Are currently a sure hit, but will be changed to a chance to hit
@@ -25,6 +25,7 @@ class StatusEffect():
     Sign:Constants = Constants.Null
     Effects:list = []
     Durations:list = []
+    Reversable:bool = None
 
     def __init__(self,Unit:'Unit', Level:int = 1, Stacks:int = 1):
         self.Unit = Unit
@@ -61,6 +62,8 @@ class StatusEffect():
         self.Turns -= 1
         if self.Turns <= 0:
             Target.Affected.remove(self)
+            if self.Reversable:
+                self.Reverse()
             del self
     
     @classmethod
@@ -71,12 +74,18 @@ class StatusEffect():
         else:
             Instance.Turns += cls.Durations[Level - 1] * Stacks
 
+    # Might chance name to Remove
+    # If Status Effects are meesed with at the start and end of the turn, this might not be needed
+    def Reverse(self):
+        pass
+
 # Some status effects may need additional features like unit ID or a chance system to be fully implemented
 class Burning(StatusEffect):
 
     Name:str = "Burning"
     Sign:Constants = Constants.Nerfs
     Durations:list = [2,2,3]
+    Reversable:bool = True
 
     # Randomly burning units isn't here yet
     def Burning1(self):
