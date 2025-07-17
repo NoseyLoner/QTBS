@@ -1,6 +1,7 @@
 import os
 from time import sleep
 from random import randint,choice
+from math import floor,ceil
 from Constants import Constants
 from StatusEffects import *
 from Observers import Director,Controller
@@ -31,18 +32,25 @@ class GameOverException(Exception):
 def ApplyEffects(Unit:'Unit'):
     ...
 
-# Unit ID needs to be added!
+# WARNING! Unit ID needs to be added!
+# WARNING! CanAttack needs to be used in the Attack method!
+# self.ID = len(Unit.Units[Team]) is a simple way to add it, but it's probably not the way you want to do it
+# Although it would be easy to replace the name system with
 class Unit:
 
     Units:dict[Constants,list['Unit']] = {Constants.Friendly:[],Constants.Hostile:[],Constants.Passive:[]}
 
-    # Applies argument might be redundant
-    def __init__(self,Damage:int,MaxHealth:int,Team:Constants,Name:str,Applies:dict[Constants,list['StatusEffect']] = {Constants.Buffs:[],Constants.Nerfs:[]}):
+    # Applies argument might be redundant?
+    # Might Change Health to HP
+    def __init__(self,Damage:int,MaxHealth:int,Armour:int,Team:Constants,Name:str,Applies:dict[Constants,list['StatusEffect']] = {Constants.Buffs:[],Constants.Nerfs:[]}):
         Unit.Units[Team].append(self)
         self._Alive = True
+        self.CanAttack:bool = True
+        self.OverHeal:bool = False
         self.Damage = Damage
         self.MaxHealth = MaxHealth
-        self.Health = MaxHealth
+        self._Health = MaxHealth
+        self.Armour = Armour
         self.Team = Team
         self.Applies = Applies
         self.Name = Name
@@ -59,6 +67,25 @@ class Unit:
             pass
         else:
             del self
+
+    @property
+    def Health(self):
+        return self._Health
+    
+    # This is done for now I think
+    # Floor and Ceiling need to added to deal with Targeted and Armoured
+    @Health.setter
+    def Health(self,Value:int):
+        if Value < 0:
+            Total = self.Armour * Value
+            self._Health -= Total
+            if self._Health <= 0:
+                self._Health = 0
+                self.Alive = False
+        elif Value > 0:
+            self._Health += Value
+            if self._Health > self.MaxHealth and not self.OverHeal:
+                self._Health = self.MaxHealth
 
     def Attack(self,Target:'Unit'):
         if Target.Team is not self.Team:
@@ -167,7 +194,7 @@ class Unit:
     # Yeah this code makes no f***ing sense lol
     # Bro genuinely what is this sh*t
     @classmethod
-    def Assign(Fish:dict[Constants,list[int]],Sheep:list['StatusEffect']):
+    def Imbude(Fish:dict[Constants,list[int]],Sheep:list['StatusEffect']):
         for Team in Fish.keys():
             FTeam = Fish[Team]
             for UnitNumber in FTeam:
@@ -307,6 +334,7 @@ def Main():
                 except ValueError:
                     print("Invalid input, please try again.")
             # There might be a better way to do this 
+            # WARNING! CanAttack should probably be checked here!
             Attacker = Unit.Units[Constants.Friendly][AttackerName - 1]
             Target = Unit.Units[Side][TargetName - 1]
             Attacker.Attack(Target)
