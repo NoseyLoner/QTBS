@@ -15,11 +15,6 @@ from Observers import Director,Controller
 #   Once all of the above is done, the only thing left is to make sure the game is actully fun (as right now it is boring, tedious and repetitive) and then release
 #   Then, visuals will begin with the help of Pygame
 
-# Important Object Orientated Programming TODO:
-#     - Add Abstract Base Class (ABC's) for Status Effects (DONE)
-#     - Add Singleton & Multiton Observer Pattern for Status Effect handiling and game controllers (DONE)
-#     - Add Enums for Constanst (DONE)
-
 Administrator = Director()
 Player = Controller(Constants.Friendly)
 Enemy = Controller(Constants.Hostile)
@@ -60,9 +55,9 @@ class Unit:
     def Alive(self):
         return self._Alive
 
+    # Add stuff here when quantum part is added
     @Alive.setter
     def Alive(self,Status:bool):
-        # Add stuff here when quantum part is added
         if Status:
             pass
         else:
@@ -77,8 +72,7 @@ class Unit:
     @Health.setter
     def Health(self,Value:int):
         if Value < 0:
-            Total = self.Armour * Value
-            self._Health -= Total
+            self._Health -= round(Value / self.Armour)
             if self._Health <= 0:
                 self._Health = 0
                 self.Alive = False
@@ -189,18 +183,10 @@ class Unit:
                 cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team,f"Unit {i + 1}"))
                 cls.Units[Team].pop()
 
-    # If your wondering why the parametera are called Fish & Sheep, it's because i needed words that stay the same when pluralised
-    # Triple nested...not sure how I feel about that
-    # Yeah this code makes no f***ing sense lol
-    # Bro genuinely what is this sh*t
+    # You might want to check is the unit already applies this effect
     @classmethod
-    def Imbude(Fish:dict[Constants,list[int]],Sheep:list['StatusEffect']):
-        for Team in Fish.keys():
-            FTeam = Fish[Team]
-            for UnitNumber in FTeam:
-                IUnit = Unit.Units[Team][UnitNumber - 1]
-                for Effect in Sheep:
-                    IUnit.Applies[Effect.Sign].append(Effect)
+    def Imbude(cls,IUnit:'Unit',Effect:'StatusEffect'):
+        IUnit.Applies[Effect.Sign].append(Effect)
 
 class Tools:
 
