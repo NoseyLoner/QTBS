@@ -5,9 +5,7 @@ from Constants import Constants
 
 # Important Status Effects Info:
 #   - Are currently a sure hit, but will be changed to a chance to hit
-#   - Are added to unit.Affected, but apllied at the end of the turn
-#   - Are Missing Important Info:
-#       - Chance to hit
+#   - Are added to unit.Affected, but applied at the end of the turn
 # I'm not sure about synergies and dissonances, as I don't have any effects that are clear similars or opposites
 
 class NotImplemented(warnings):
@@ -18,19 +16,19 @@ class NotImplemented(warnings):
 # Status Effects also need some kind of function or decorator to add them to the game loop
 class StatusEffect():
 
-    # Stats was here, but it was removed, add it back if needed
-    # bro stfu that was a horrible idea
     Name:str = ""
     Sign:Constants = Constants.Null
     Effects:list = []
     Durations:list = []
     Reversable:bool = None
+    Reversables:dict = {}
 
     def __init__(self,Unit:'Unit', Level:int = 1, Stacks:int = 1):
         self.Unit = Unit
         self.Level = Level
         self.Stacks = Stacks
         self.Turns = self.Durations[Level - 1] * Stacks
+        self.Reversables = {Attribute:getattr(Unit,Attribute) for Attribute in self.Reversables}
     
     def Effect1(self):
         pass
@@ -69,6 +67,9 @@ class StatusEffect():
     def Stack(cls,Target:'Unit',Instance:'StatusEffect',Level:int,Stacks:int):
         if Instance.Level < Level:
             Target.Affected.remove(Instance)
+            if self.Reversable:
+                self.Reverse()
+            del self
             Target.Affected.append(cls(Target, Level, Stacks))
         else:
             Instance.Turns += cls.Durations[Level - 1] * Stacks
@@ -76,7 +77,8 @@ class StatusEffect():
     # Might chance name to Remove
     # If Status Effects are meesed with at the start and end of the turn, this might not be needed
     def Reverse(self):
-        pass
+        for Attribute in self.Reversables:
+            setattr(self.Unit, Attribute, self.Reversables[Attribute])
 
 # Some status effects may need additional features like unit ID or a chance system to be fully implemented
 class Burning(StatusEffect):
@@ -85,17 +87,18 @@ class Burning(StatusEffect):
     Sign:Constants = Constants.Nerfs
     Durations:list = [2,2,3]
     Reversable:bool = True
+    Reversables:list = {"Damage":0}
 
     # Randomly burning units is set at 15% for Burning1 & 2, and at 20% for Burning3
     def Burning1(self):
         self.Unit.Health -= 2
         if Tools.Chance(15):
-                Targets = 1
-                while Targets != 0:
-                    Possible = choice(Unit.Units[self.Unit.Team])
-                    if Possible != self.Unit:
-                        Possible.Health -= 1
-                        Targets -= 1
+            Targets = 1
+            while Targets != 0:
+                Possible = choice(Unit.Units[self.Unit.Team])
+                if Possible != self.Unit:
+                    Possible.Health -= 1
+                    Targets -= 1
 
     def Burning2(self):
         self.Unit.Health -= 3
@@ -214,13 +217,13 @@ class Targeted(StatusEffect):
     Durations:list = [4,4,4]
 
     def Targeted1(self):
-        self.Unit.Armour = 1.15
+        self.Unit.Armour = round(self.Unit.Armour * 1.15)
 
     def Targeted2(self):
-        self.Unit.Armour = 1.20
+        self.Unit.Armour = round(self.Unit.Armour * 1.20)
 
     def Targeted3(self):
-        self.Unit.Armour = 1.25
+        self.Unit.Armour = round(self.Unit.Armour * 1.25)
 
     Effects = [Targeted1, Targeted2, Targeted3]
 
@@ -276,13 +279,13 @@ class Armoured(StatusEffect):
     Durations:list = [3,3,3]
 
     def Armoured1(self):
-        self.Unit.Armour = 1.20
+        self.Unit.Armour = round(self.Unit.Armour * 1.20)
 
     def Armoured2(self):
-        self.Unit.Armour = 1.25
+        self.Unit.Armour = round(self.Unit.Armour * 1.25)
 
     def Armoured3(self):
-        self.Unit.Armour = 1.30
+        self.Unit.Armour = round(self.Unit.Armour * 1.30)
 
     Effects = [Armoured1, Armoured2, Armoured3]
 
@@ -291,30 +294,32 @@ class Frenzied(StatusEffect):
     Name:str = "Frenzied"
     Sign:Constants = Constants.Buffs
     Durations:list = [3,3,3]
-    Frenzed:bool = False
 
+    F1:bool = False
     def Frenzied1(self):
-        if not self.Frenzed:
+        if not self.F1:
             self.Unit.Damage = round(self.Unit.Damage * 1.1)
             self.Unit.MaxHealth = round(self.Unit.MaxHealth * 0.9)
             if self.Unit.Health > self.Unit.MaxHealth:
                 self.Unit.Health = self.Unit.MaxHealth
-            self.Frenzed = True
+            self.F1 = True
 
+    F2:bool = False
     def Frenzied2(self):
-        if not self.Frenzed:
+        if not self.F2:
             self.Unit.Damage = round(self.Unit.Damage * 1.2)
             self.Unit.MaxHealth = round(self.Unit.MaxHealth * 0.8)
             if self.Unit.Health > self.Unit.MaxHealth:
                 self.Unit.Health = self.Unit.MaxHealth
-            self.Frenzed = True
+            self.F2 = True
 
+    F3:bool = False
     def Frenzied3(self):
-        if not self.Frenzed:
+        if not self.F3:
             self.Unit.Damage = round(self.Unit.Damage * 1.4)
             self.Unit.MaxHealth = round(self.Unit.MaxHealth * 0.6)
             if self.Unit.Health > self.Unit.MaxHealth:
                 self.Unit.Health = self.Unit.MaxHealth
-            self.Frenzed = True
+            self.F3 = True
 
     Effects = [Frenzied1, Frenzied2, Frenzied3]
