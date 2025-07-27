@@ -8,7 +8,7 @@ from Constants import Constants
 #   - Are added to unit.Affected, but applied at the end of the turn
 # I'm not sure about synergies and dissonances, as I don't have any effects that are clear similars or opposites
 
-class NotImplemented(warnings):
+class NotImplemented(Warning):
     pass
 
 # Status Effects need a unit ID to work properly, the current system is temporary
@@ -21,14 +21,14 @@ class StatusEffect():
     Effects:list = []
     Durations:list = []
     Reversable:bool = None
-    Reversables:dict = {}
+    Reversables:list = []
 
     def __init__(self,Unit:'Unit', Level:int = 1, Stacks:int = 1):
         self.Unit = Unit
         self.Level = Level
         self.Stacks = Stacks
         self.Turns = self.Durations[Level - 1] * Stacks
-        self.Reversables = {Attribute:getattr(Unit,Attribute) for Attribute in self.Reversables}
+        self.Reversed = {Attribute:getattr(Unit,Attribute) for Attribute in self.Reversables}
     
     def Effect1(self):
         pass
@@ -43,15 +43,11 @@ class StatusEffect():
 
     @classmethod
     def Apply(cls,Target:'Unit', Level:int = 1, Stacks:int = 1):
-        Stack = False
         for Effect in Target.Affected:
             if Effect.Name == cls.Name:
-                Stack = True
-                break
-        if Stack:
-            cls.Stack(Target,Effect,Level,Stacks)
-        else:
-            Target.Affected.append(cls(Target, Level, Stacks))
+                cls.Stack(Target,Effect,Level,Stacks)
+                return
+        Target.Affected.append(cls(Target, Level, Stacks))
 
     # I might have to have seperate effect procedures for each effect to get rid of permanent effects
     def Effect(self,Target:'Unit'):
@@ -67,9 +63,9 @@ class StatusEffect():
     def Stack(cls,Target:'Unit',Instance:'StatusEffect',Level:int,Stacks:int):
         if Instance.Level < Level:
             Target.Affected.remove(Instance)
-            if self.Reversable:
-                self.Reverse()
-            del self
+            if Instance.Reversable:
+                Instance.Reverse()
+            del Instance
             Target.Affected.append(cls(Target, Level, Stacks))
         else:
             Instance.Turns += cls.Durations[Level - 1] * Stacks
@@ -77,7 +73,7 @@ class StatusEffect():
     # Might chance name to Remove
     # If Status Effects are meesed with at the start and end of the turn, this might not be needed
     def Reverse(self):
-        for Attribute in self.Reversables:
+        for Attribute in self.Reversed:
             setattr(self.Unit, Attribute, self.Reversables[Attribute])
 
 # Some status effects may need additional features like unit ID or a chance system to be fully implemented
@@ -87,7 +83,7 @@ class Burning(StatusEffect):
     Sign:Constants = Constants.Nerfs
     Durations:list = [2,2,3]
     Reversable:bool = True
-    Reversables:list = {"Damage":0}
+    Reversables:list = ["Damage"]
 
     # Randomly burning units is set at 15% for Burning1 & 2, and at 20% for Burning3
     def Burning1(self):
@@ -136,6 +132,8 @@ class Weakened(StatusEffect):
     Name:str = "Weakened"
     Sign:Constants = Constants.Nerfs
     Durations:list = [2,2,3]
+    Reversable:bool = True
+    Reversables:list = ["Damage"]
     
     W1:bool = False
     def Weakened1(self):
@@ -145,6 +143,7 @@ class Weakened(StatusEffect):
 
     # Extra weaken chance is set at 20%
     # The stuff I'm going to do with W2 and W3 is probably really bad, but it avoids Weakened3 not reducing damage
+    # Also the extra effect being weakening damage again by 1 is really boring and unoriginal
     W2:bool = False
     Extra:bool = False
     def Weakened2(self,Weakener:bool = W2):
@@ -175,7 +174,7 @@ class Shocked(StatusEffect):
     Name:str = "Shocked"
     Sign:Constants = Constants.Nerfs
     # Durations are increased as Shocking effects are chance based
-    Durations:list = [6,5,5]
+    Durations:list = [7,6,5]
 
     # Chance to deal damage is set at 20% for Shocked1 & 2, and at 25% for Shocked3
     def Shocked1(self):
@@ -228,6 +227,7 @@ class Targeted(StatusEffect):
     Effects = [Targeted1, Targeted2, Targeted3]
 
 # Changing name to Luck might make more sense
+# Might scrap this
 class Lucky(StatusEffect):
 
     Name:str = "Lucky"
