@@ -20,5 +20,5 @@ class Controller(metaclass = Multiton):
         for Message in self.Messages:
             print(Message)
 
-    def Update(self,Message:str):
-        self.Messages.append(Message)
+    def Update(self,ID:str,Message:str):
+        self.Messages.append((ID,Message))

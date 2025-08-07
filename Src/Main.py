@@ -2,10 +2,8 @@ import os
 from time import sleep
 from Observers import Controller
 from Constants import Constants
-from Entities import Unit,GameOverException
 from random import randint,choice
 from math import floor,ceil
-from StatusEffects import StatusEffect
 
 # Game Progress:
 #   For the text based 1.0, as of now (08/03/25) mostly everything up to quantum stuff has been implemented in code, and just needs actully substance/testing:
@@ -19,32 +17,36 @@ from StatusEffects import StatusEffect
 class GameOverException(Exception):
     pass
 
+class CannotAttackException(Exception):
+    pass
+
 Player = Controller(Constants.Friendly)
 Enemy = Controller(Constants.Hostile)
+Controllers = {Constants.Friendly:Player,Constants.Hostile:Enemy}
 
-# WARNING! Unit ID needs to be added!
-# WARNING! CanAttack needs to be used in the Attack method!
 # self.ID = len(Unit.Units[Team]) is a simple way to add it, but it's probably not the way you want to do it
 # Although it would be easy to replace the name system with
 class Unit:
 
-    Units:dict[Constants,list['Unit']] = {Constants.Friendly:[],Constants.Hostile:[],Constants.Passive:[]}
+    #Good choice
+    Units:dict[Constants,dict[str,'Unit']] = {Constants.Friendly:{},Constants.Hostile:{},Constants.Passive:{}}
 
     # Applies argument might be redundant?
-    # Might Change Health to HP
-    def __init__(self,Damage:int,MaxHealth:int,Armour:int,Team:Constants,Name:str,Applies:dict[Constants,list['StatusEffect']] = {Constants.Buffs:[],Constants.Nerfs:[]}):
+    def __init__(self,Damage:int,MaxHealth:int,Armour:int,Heal:int,Team:Constants,Applies:dict[Constants,list] = {Constants.Buffs:[],Constants.Nerfs:[]}):
         Unit.Units[Team].append(self)
         self._Alive = True
         self.CanAttack:bool = True
         self.OverHeal:bool = False
+        self.ID = Team.value[0] + str(Unit.Units[Team].index(self) + 1)
+        self.Affected:list = []
+        self.Controller = Controllers[Team] 
         self.Damage = Damage
         self.MaxHealth = MaxHealth
         self._Health = MaxHealth
         self.Armour = Armour
+        self.Heal = Heal
         self.Team = Team
         self.Applies = Applies
-        self.Name = Name
-        self.Affected:list['StatusEffect'] = []
         
     @property
     def Alive(self):
@@ -77,27 +79,29 @@ class Unit:
                 self._Health = self.MaxHealth
 
     def Attack(self,Target:'Unit'):
-        if Target.Team is not self.Team:
-            Target.Health -= self.Damage
-            Director.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has attacked {Target.Team.value} {Target.Name}.")
-            # for now, status effects are sure hit, but will be chance based later on
-            if self.Applies[Constants.Nerfs]:
-                for Effect in self.Applies[Constants.Nerfs]:
-                    Effect.Apply(Target)
-                    Director.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has nerfed {Target.Team.value} {Target.Name} with {Effect.Name}.")
+        if not self.CanAttack:
+            raise CannotAttackException(f"{self.ID} cannot attack!")
         else:
-            # When Enchantments are added, change this to allow overhealing if the unit has a certain level of mending
-            if Target.Health >= Target.MaxHealth:
-                # Might get  rid of this message later
-                print(f"{Target.Name} Cannot be healed further.")
+            if Target.Team is not self.Team:
+                Target.Health -= self.Damage
+                self.Controller.Update(self.ID,f"Unit {self.ID} has attacked Unit {Target.ID}, dealing {self.Damage} damage.")
+                # for now, status effects are sure hit, but will be chance based later on
+                if self.Applies[Constants.Nerfs]:
+                    for Effect in self.Applies[Constants.Nerfs]:
+                        Effect.Apply(Target)
+                        self.Controller.Update(Target.ID,f"Unit {self.ID} has nerfed Unit {Target.ID} with {Effect.Name}.")
             else:
-                Target.Health += self.Damage
-            # Same as above for buffs
-            if self.Applies[Constants.Buffs]:
-                for Effect in self.Applies[Constants.Buffs]:
-                    Effect.Apply(Target)
-                    Director.Update(Target.Team,Target.Name,f"{self.Team.value} {self.Name} has buffed {Target.Team.value} {Target.Name} with {Effect.Name}.")
-            
+                # When Enchantments are added, change this to allow overhealing if the unit has a certain level of mending
+                if Target.Health >= Target.MaxHealth:
+                    # Might get rid of this message later
+                    print(f"{Target.ID} Cannot be healed further.")
+                else:
+                    Target.Health += self.Heal
+                # Same as above for buffs
+                if self.Applies[Constants.Buffs]:
+                    for Effect in self.Applies[Constants.Buffs]:
+                        Effect.Apply(Target)
+                        self.Controller.Update(Target.ID,f"Unit {self.ID} has buffed Unit {Target.ID} with {Effect.Name}.")
 
     @classmethod
     def Strongest(cls,Team:Constants) -> 'Unit':
@@ -154,7 +158,7 @@ class Unit:
                 print("-" * 28)
                 print(f"{ATeam.value} Units: {len(cls.Units[ATeam])}/3")
                 for AUnit in cls.Units[ATeam]:
-                    print(f"{AUnit.Name}: Health: {AUnit.Health}/{AUnit.MaxHealth}, Damage: {AUnit.Damage}")
+                    print(f"{AUnit.ID}: Health: {AUnit.Health}/{AUnit.MaxHealth}, Damage: {AUnit.Damage}")
                 print("-" * 28,"\n")
                 sleep(1)
         else:
@@ -162,25 +166,26 @@ class Unit:
                 print("-" * 28)
                 print(f"{Team.value} Units: {len(cls.Units[Team])}/3")
                 for Unit in cls.Units[Team]:
-                    print(f"{Unit.Name}: Health: {Unit.Health}/{Unit.MaxHealth}, Damage: {Unit.Damage}")
+                    print(f"{Unit.ID}: Health: {Unit.Health}/{Unit.MaxHealth}, Damage: {Unit.Damage}")
                 print("-" * 28,"\n")
                 sleep(1)
 
-    # This is fine,i think?
+    #TODO: Make ID creation better
     @classmethod
     def Create(cls,Amount:int,Team:Constants = Constants.All):
         if Team == Constants.All:
             for ATeam in cls.Units:
                 for i in range(Amount):
-                    cls.Units[ATeam].append(Unit(randint(4,7),randint(14,20),ATeam,f"Unit {i + 1}"))
+                    ID = f"{ATeam.value[0]}{len(cls.Units[ATeam]) + 1}"
+                    cls.Units[ATeam][ID] = Unit(randint(4,7),randint(49,52),1,randint(0,4),ATeam)
         else:
             for i in range(Amount):
-                cls.Units[Team].append(Unit(randint(4,7),randint(14,20),Team,f"Unit {i + 1}"))
+                cls.Units[Team].append(Unit(randint(4,7),randint(49,52),1,randint(0,4),Team))
                 cls.Units[Team].pop()
 
     # You might want to check is the unit already applies this effect
     @classmethod
-    def Imbude(cls,IUnit:'Unit',Effect:'StatusEffect'):
+    def Imbude(cls,IUnit:'Unit',Effect):
         IUnit.Applies[Effect.Sign].append(Effect)
 
 class Tools:
@@ -261,7 +266,6 @@ class Tools:
         Tools.Clear()
         
 # The main function doesn't use the Administrator or Controllers to notify the player
-# This should be changed
 def Main():
     print("QTBS: First Concept.")
 
@@ -279,8 +283,8 @@ def Main():
     Turn = Tools.Starter()
     Tools.Clear()
     Clearer = 0
-    sleep(1)
     Sides = {"E":Constants.Hostile,"F":Constants.Friendly}
+    sleep(1)
 
     while True:
         try:
@@ -321,11 +325,11 @@ def Main():
             Attacker.Attack(Target)
             sleep(1)
             if Side == Constants.Hostile:
-                print(f"\nYou Attacked {Target.Name} with Unit {Attacker.Name} and dealt {Attacker.Damage} damage.")
+                print(f"\nYou Attacked {Target.ID} with Unit {Attacker.ID} and dealt {Attacker.Damage} damage.")
                 if not Target.Alive:
-                    print(f"You have killed {Target.Name}!")
+                    print(f"You have killed {Target.ID}!")
             else:
-                print(f"\nYou Healed {Target.Name} with {Attacker.Name} and healed {Attacker.Damage} health.")
+                print(f"\nYou Healed {Target.ID} with {Attacker.ID} and healed {Attacker.Damage} health.")
         else:
             print("Enemy's Turn:")
             Ratio = Unit.Healths(Constants.Hostile)
@@ -336,16 +340,16 @@ def Main():
                 Target = choice(Unit.Units[Constants.Friendly])
                 Strongest.Attack(Target)
                 sleep(1)
-                print(f"Enemy Attacked {Target.Name} with {Strongest.Name},dealt {Strongest.Damage} damage.")
+                print(f"Enemy Attacked {Target.ID} with {Strongest.ID},dealt {Strongest.Damage} damage.")
                 sleep(1)
                 if not Target.Alive:
-                    print(f"The Enemy has killed {Target.Name}!")
+                    print(f"The Enemy has killed {Target.ID}!")
                 sleep(1)
             else:
                 Weakest = Unit.Weakest(Constants.Hostile)
                 Strongest.Attack(Weakest)
                 sleep(1)
-                print(f"Enemy Healed {Weakest.Name} with {Strongest.Name},healed {Strongest.Damage} health.")
+                print(f"Enemy Healed {Weakest.ID} with {Strongest.ID},healed {Strongest.Damage} health.")
                 sleep(1)
         
         Exit = input("Press 'E' to exit the game or any other key to continue: ").capitalize()
