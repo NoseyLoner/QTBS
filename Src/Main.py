@@ -22,7 +22,7 @@ class CannotAttackException(Exception):
 
 Player = Controller(Constants.Friendly)
 Enemy = Controller(Constants.Hostile)
-Controllers = {Constants.Friendly:Player,Constants.Hostile:Enemy}
+Controllers:dict[Constants,Controller] = {Constants.Friendly:Player,Constants.Hostile:Enemy}
 
 # self.ID = len(Unit.Units[Team]) is a simple way to add it, but it's probably not the way you want to do it
 # Although it would be easy to replace the name system with
@@ -75,6 +75,10 @@ class Unit:
             self._Health -= round(Difference / self.Armour)
             if self._Health <= 0:
                 self._Health = 0
+                if self.Team == Constants.Friendly:
+                    Enemy.Coins += 1
+                else:
+                    Player.Coins += 1
                 self.Alive = False
         elif Value > self._Health:
             self._Health = Value
@@ -144,9 +148,9 @@ class Unit:
     @classmethod
     def Check(cls):
         if len(cls.Units[Constants.Friendly]) == 0:
-            raise GameOverException("Hostile Units Win!")
+            raise GameOverException("Hostile Units Win!",Constants.Hostile)
         elif len(cls.Units[Constants.Hostile]) == 0:
-            raise GameOverException("Friendly Units Win!")  
+            raise GameOverException("Friendly Units Win!",Constants.Friendly)
 
     @classmethod
     def Display(cls,Teams:list[Constants] = Constants.All):
@@ -262,23 +266,39 @@ class Tools:
             print(ClosingMessage)
         sleep(1)
         Tools.Clear()
+
+    @staticmethod
+    def Shop():
+        pass
+
+    @staticmethod
+    def Loop(StartAgain = False):
+        if not StartAgain:
+            
+            Tools.Shop()
+            if len(Unit.Units[Constants.Friendly]) != 3:
+                Unit.Create(3 - len(Unit.Units[Constants.Friendly]),Constants.Friendly)
+            Tools.Clear()
+
+# The main function doesn't use the Controllers to notify the player
+def Main(Looping:bool = False):
+    if not Looping:
+        # Not the first concept anymore
+        print("QTBS: First Concept.")
+
+        Unit.Create(3,Constants.Friendly)
+        Unit.Create(3,Constants.Hostile)
+
+        Tools.Wait(StartingMessage = "Setting Up...")
         
-# The main function doesn't use the Administrator or Controllers to notify the player
-def Main():
-    # Not the first concept anymore
-    print("QTBS: First Concept.")
-
-    Unit.Create(3,Constants.Friendly)
-    Unit.Create(3,Constants.Hostile)
-
-    Tools.Wait(StartingMessage = "Setting Up...")
+        Tutor = input("Press 'T' to play the tutorial or any other key to skip: ").capitalize()
+        if Tutor == "T":
+            Tools.Wait(Time = 1,StartingMessage = "Starting Tutorial...")
+            Tools.Tutorial()
+            Tools.Clear()
+    else:
+        Tools.Loop()
     
-    Tutor = input("Press 'T' to play the tutorial or any other key to skip: ").capitalize()
-    if Tutor == "T":
-        Tools.Wait(Time = 1,StartingMessage = "Starting Tutorial...")
-        Tools.Tutorial()
-
-    Tools.Clear()
     Turn = Tools.Starter()
     sleep(1)
     Tools.Wait(Time = 1,StartingMessage = "Starting Game...")
@@ -289,9 +309,18 @@ def Main():
         try:
             Unit.Check()
         except GameOverException as Winner:
+            Controllers[Winner.args[1]].Coins += 1
             print(Winner)
-            input("Press enter to exit the game.")
-            break
+            print("You know have two options, you can\n1. Continue playing by looping, gaining coin(s) to spend on upgrades\nOr\n2. Exit the game\n")
+            while True:
+                Choice = input("Enter 1 to Loop or 2 to Exit: ")
+                if Choice == "1":
+                    Tools.Wait(StartingMessage = "Looping...")
+                    Main(Looping = True)
+                elif Choice == "2":
+                    Tools.Exit()
+                else:
+                    print("Invalid choice, please try again.")
         Unit.Display([Constants.Friendly,Constants.Hostile])
         if Turn:
             print("Player's Turn:")
@@ -344,11 +373,6 @@ def Main():
             Tools.Exit()
 
         Turn = not Turn
-        try:
-            Unit.Check()
-        except GameOverException as Winner:
-            print(Winner)
-            break
         Clearer += 1
         if Clearer % 2 == 0:
             Choice = input("Press 'C' to clear the screen or any other key to continue: ").capitalize()
