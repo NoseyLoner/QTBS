@@ -3,6 +3,10 @@ from random import choice
 from Main import Unit,Tools
 from Constants import Constants
 
+# WARNINGs!!!
+#   - Status Effects aren't updated to handle the rework of Unit.Units
+#   - Status Effects STILL aren't reversable (seriously Bimi you made the varible two weeks ago)
+
 # Important Status Effects Info:
 #   - Are currently a sure hit, but will be changed to a chance to hit
 #   - Are added to unit.Affected, but applied at the end of the turn
@@ -158,12 +162,11 @@ class Weakened(StatusEffect):
                     self.Unit.Damage -= 1
                     self.Extra = True
 
-    # Permanent damage reduction is set at 15%
     Counts:int = 3
     W3:bool = False
     def Weakened3(self):
         self.Weakened2(Weakener = self.W3)
-        if Tools.Chance(15) and self.Counts > 0:
+        if Tools.Chance(25) and self.Counts > 0:
             self.Unit.Damage -= 1
             self.Counts -= 1
 
@@ -178,12 +181,12 @@ class Shocked(StatusEffect):
 
     # Chance to deal damage is set at 20% for Shocked1 & 2, and at 25% for Shocked3
     def Shocked1(self):
-        if Tools.Chance(20):
+        if Tools.Chance(40):
             self.Unit.Health -= 3
             self.Unit.CanAttack = False
 
     def Shocked2(self):
-        if Tools.Chance(20):
+        if Tools.Chance(45):
             self.Unit.Health -= 3
             self.Unit.CanAttack = False
             if Tools.Chance(15):
@@ -195,7 +198,7 @@ class Shocked(StatusEffect):
                         Targets -= 1
 
     def Shocked3(self):
-        if Tools.Chance(25):
+        if Tools.Chance(50):
             self.Unit.Health -= 4
             self.Unit.CanAttack = False
             if Tools.Chance(15):
@@ -216,13 +219,13 @@ class Targeted(StatusEffect):
     Durations:list = [4,4,4]
 
     def Targeted1(self):
-        self.Unit.Armour = round(self.Unit.Armour * 1.15)
+        self.Unit.Armour = round(self.Unit.Armour * 1.15,2)
 
     def Targeted2(self):
-        self.Unit.Armour = round(self.Unit.Armour * 1.20)
+        self.Unit.Armour = round(self.Unit.Armour * 1.20,2)
 
     def Targeted3(self):
-        self.Unit.Armour = round(self.Unit.Armour * 1.25)
+        self.Unit.Armour = round(self.Unit.Armour * 1.25,2)
 
     Effects = [Targeted1, Targeted2, Targeted3]
 
@@ -279,13 +282,13 @@ class Armoured(StatusEffect):
     Durations:list = [3,3,3]
 
     def Armoured1(self):
-        self.Unit.Armour = round(self.Unit.Armour * 1.20)
+        self.Unit.Armour = round(self.Unit.Armour * 1.20,2)
 
     def Armoured2(self):
-        self.Unit.Armour = round(self.Unit.Armour * 1.25)
+        self.Unit.Armour = round(self.Unit.Armour * 1.25,2)
 
     def Armoured3(self):
-        self.Unit.Armour = round(self.Unit.Armour * 1.30)
+        self.Unit.Armour = round(self.Unit.Armour * 1.30,2)
 
     Effects = [Armoured1, Armoured2, Armoured3]
 
