@@ -38,7 +38,8 @@ class Unit:
         self.CanAttack:bool = True
         self.OverHeal:bool = False
         self.Affected:list = []
-        self.Controller = Controllers[Team] 
+        self.Controller = Controllers[Team]
+        self.Chance = 20 
         self.Damage = Damage
         self.MaxHealth = MaxHealth
         self._Health = MaxHealth
@@ -95,7 +96,7 @@ class Unit:
                 self.Controller.Update(self.ID,f"Unit {self.ID} has attacked Unit {Target.ID}, dealing {self.Damage} damage.")
                 print(f"Unit {self.ID} has attacked Unit {Target.ID}, dealing {self.Damage} damage.")
                 # for now, status effects are sure hit, but will be chance based later on
-                if self.Applies[Constants.Nerfs]:
+                if self.Applies[Constants.Nerfs] and Tools.Chance(self.Chance):
                     for Effect in self.Applies[Constants.Nerfs]:
                         Effect.Apply(Target)
                         self.Controller.Update(Target.ID,f"Unit {self.ID} has nerfed Unit {Target.ID} with {Effect.Name}.")
@@ -108,7 +109,7 @@ class Unit:
                     Target.Health += self.Heal
                     print(f"Unit {self.ID} has healed Unit {Target.ID} for {self.Heal} health.")
                 # Same as above for buffs
-                if self.Applies[Constants.Buffs]:
+                if self.Applies[Constants.Buffs] and Tools.Chance(self.Chance):
                     for Effect in self.Applies[Constants.Buffs]:
                         Effect.Apply(Target)
                         self.Controller.Update(Target.ID,f"Unit {self.ID} has buffed Unit {Target.ID} with {Effect.Name}.")
@@ -179,13 +180,13 @@ class Unit:
                 for i in range(Amount):
                     cls.Counters[ATeam] += 1
                     ID = f"{ATeam.value[0]}{cls.Counters[ATeam]}"
-                    cls.Units[ATeam][ID] = Unit(randint(6,9),randint(36,45),1,randint(0,3),ID,ATeam)
+                    cls.Units[ATeam][ID] = Unit(randint(6,9),randint(36,45),1,randint(1,4),ID,ATeam)
                     cls.IDs.append(ID)
         else:
             for i in range(Amount):
                 cls.Counters[Team] += 1
                 ID = f"{Team.value[0]}{cls.Counters[Team]}"
-                cls.Units[Team][ID] = Unit(randint(6,9),randint(36,45),1,randint(0,3),ID,Team)
+                cls.Units[Team][ID] = Unit(randint(6,9),randint(36,45),1,randint(1,4),ID,Team)
                 cls.IDs.append(ID)
                 cls.Units[Team]
 
