@@ -1,6 +1,9 @@
 from Constants import Constants
 from random import choice
 from Main import Unit
+from typing import Callable
+from Observers import Controller
+from StatusEffects import *
 
 class Shop:
 
@@ -19,7 +22,13 @@ class Shop:
 
 class Upgrades:
 
-    StatUpgrades = {
+    PossibleUpgrades:dict[Constants,list[str]] = {
+        Constants.Common:["Damage","Health"],
+        Constants.Rare:["Damage","MaxHealth","Heal","Armour","Health","Chance"],
+        Constants.Epic:["Damage","MaxHealth","Heal","Armour","Health","Chance","AddApplies","LevelEffects"],
+        Constants.Legendary:["Damage","MaxHealth","Heal","Armour","LevelEffects","Multistack","EffectSlots"]}
+
+    ArithmeticUpgrades:dict[str,dict[Constants,dict[str,list[int | float] | float | Constants]]] = {
         "Damage":{Constants.Common:{"Values":[2,3],"Type":Constants.Additive},
                    Constants.Rare:{"Values":[4,5],"Type":Constants.Additive},
                    Constants.Epic:{"Values":[6,7],"Type":Constants.Additive},
@@ -39,21 +48,40 @@ class Upgrades:
         "Chance":{Constants.Rare:{"Values":1.20,"Type":Constants.Multiplicative},
                   Constants.Epic:{"Values":1.30,"Type":Constants.Multiplicative}}}
 
-    # TODO: update init to avoid rarity errors
+    OtherUpgrades:dict[str,dict[str,str | Callable[[Unit | Controller | Shop],None] | list[int]]] = {
+        "AddApplies":{}
+    }
+
     def __init__(self,Rarity:Constants,Stat:bool):
         self.Rarity = Rarity
-        if Stat:
-            self.Stat = choice(list(LStat for LStat in list(Upgrades.StatUpgrades.keys()) if Rarity in Upgrades.StatUpgrades[LStat].keys()))
-            self.Value = choice(list(Upgrades.StatUpgrades[self.Stat][self.Rarity]["Values"]))
+        self.Effect = choice(self.PossibleUpgrades[Rarity])
+        if self.Effect in self.ArithmeticUpgrades:
+            self.Type = Constants.ArithmeticUpgrade
+            self.Value:int | float = choice(list(Upgrades.ArithmeticUpgrades[self.Effect][self.Rarity]["Values"]))
+            self.Activator:Callable = self.ArithmeticActivate
+        elif self.Effect in ["AddApplies","LevelEffects"]:
+            self.Value = Upgrades.Evaluate(self.Effect)
+        
 
     def __str__(self):
-        if Upgrades.StatUpgrades[self.Stat][self.Rarity]["Type"] == Constants.Additive:
-            return f"Increase {self.Stat} by {self.Value}"
-        elif Upgrades.StatUpgrades[self.Stat][self.Rarity]["Type"] == Constants.Multiplicative:
-            return f"Increase {self.Stat} by {self.Value * 100 - 100}%"
+        if Upgrades.ArithmeticUpgrades[self.Effect][self.Rarity]["Type"] == Constants.Additive:
+            return f"Increase {self.Effect} by {self.Value}"
+        elif Upgrades.ArithmeticUpgrades[self.Effect][self.Rarity]["Type"] == Constants.Multiplicative:
+            return f"Increase {self.Effect} by {self.Value * 100 - 100}%"
+        elif self.Effect == "AddApplies":
+            return f"Let's a unit apply the {self.Value.Name} Status Effect"
 
-    def Activate(self,Unit:Unit):
-        if Upgrades.StatUpgrades[self.Stat][self.Rarity]["Type"] == Constants.Additive:
+    def ArithmeticActivate(self,Unit:Unit):
+        if Upgrades.ArithmeticUpgrades[self.Effect][self.Rarity]["Type"] == Constants.Additive:
             setattr(Unit,self.Stat,getattr(Unit,self.Stat) + self.Value)
-        elif Upgrades.StatUpgrades[self.Stat][self.Rarity]["Type"] == Constants.Multiplicative:
+        elif Upgrades.ArithmeticUpgrades[self.Effect][self.Rarity]["Type"] == Constants.Multiplicative:
             setattr(Unit,self.Stat,getattr(Unit,self.Stat) * self.Value)
+
+    def Evaluate(self,Evaluatee:str):
+        if Evaluatee == "AddApplies":
+            return choice([Burning,Weakened,Shocked,Targeted,Healing,Armoured,Frenzied])
+        elif Evaluatee == "LevelEffects":
+            if self.Rarity == Constants.Epic:
+                return 1
+            elif self.Rarity == Constants.Legendary:
+                return 2
