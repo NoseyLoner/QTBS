@@ -7,16 +7,9 @@ from Constants import Constants
 #   - Status Effects aren't updated to handle the rework of Unit.Units
 #   - Status Effects STILL aren't reversable (seriously Bimi you made the varible two weeks ago)
 
-# Important Status Effects Info:
-#   - Are currently a sure hit, but will be changed to a chance to hit
-#   - Are added to unit.Affected, but applied at the end of the turn
-# I'm not sure about synergies and dissonances, as I don't have any effects that are clear similars or opposites
-
 class NotImplemented(Warning):
     pass
 
-# Status Effects need a unit ID to work properly, the current system is temporary
-# The above statement is probably not true, but unit ID is needed anyways
 # Status Effects also need some kind of function or decorator to add them to the game loop
 class StatusEffect():
 
@@ -27,7 +20,7 @@ class StatusEffect():
     Reversable:bool = None
     Reversables:list = []
 
-    def __init__(self,Unit:'Unit', Level:int = 1, Stacks:int = 1):
+    def __init__(self,Unit:'Unit',Level:int = 1,Stacks:int = 1):
         self.Unit = Unit
         self.Level = Level
         self.Stacks = Stacks
@@ -43,10 +36,10 @@ class StatusEffect():
     def Effect3(self):
         pass
 
-    Effects = [Effect1, Effect2, Effect3]
+    Effects = [Effect1,Effect2,Effect3]
 
     @classmethod
-    def Apply(cls,Target:'Unit', Level:int = 1, Stacks:int = 1):
+    def Apply(cls,Target:'Unit', Level:int = 1,Stacks:int = 1):
         for Effect in Target.Affected:
             if Effect.Name == cls.Name:
                 cls.Stack(Target,Effect,Level,Stacks)
@@ -228,25 +221,6 @@ class Targeted(StatusEffect):
         self.Unit.Armour = round(self.Unit.Armour * 1.25,2)
 
     Effects = [Targeted1, Targeted2, Targeted3]
-
-# Changing name to Luck might make more sense
-# Might scrap this
-class Lucky(StatusEffect):
-
-    Name:str = "Lucky"
-    Sign:Constants = Constants.Buffs
-    Durations:list = [4,3,3]
-
-    def Lucky1(self):
-        warnings.warn("Lucky has not been implemented yet (I don't know how to, sorry!)", NotImplemented)
-
-    def Lucky2(self):
-        warnings.warn("Lucky has not been implemented yet (I don't know how to, sorry!)", NotImplemented)
-
-    def Lucky3(self):
-        warnings.warn("Lucky has not been implemented yet (I don't know how to, sorry!)", NotImplemented)
-
-    Effects = [Lucky1, Lucky2, Lucky3]
 
 class Healing(StatusEffect):
 
