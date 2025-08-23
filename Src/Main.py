@@ -95,20 +95,19 @@ class Unit:
                 Target.Health -= self.Damage
                 self.Controller.Update(self.ID,f"Unit {self.ID} has attacked Unit {Target.ID}, dealing {self.Damage} damage.")
                 print(f"Unit {self.ID} has attacked Unit {Target.ID}, dealing {self.Damage} damage.")
-                # for now, status effects are sure hit, but will be chance based later on
+                # out of date
                 if self.Applies[Constants.Nerfs] and Tools.Chance(self.Chance):
                     for Effect in self.Applies[Constants.Nerfs]:
                         Effect.Apply(Target)
                         self.Controller.Update(Target.ID,f"Unit {self.ID} has nerfed Unit {Target.ID} with {Effect.Name}.")
             else:
-                # When Enchantments are added, change this to allow overhealing if the unit has a certain level of mending
                 if Target.Health >= Target.MaxHealth:
                     # Might get rid of this message later
                     print(f"{Target.ID} Cannot be healed further.")
                 else:
                     Target.Health += self.Heal
                     print(f"Unit {self.ID} has healed Unit {Target.ID} for {self.Heal} health.")
-                # Same as above for buffs
+                # out of date
                 if self.Applies[Constants.Buffs] and Tools.Chance(self.Chance):
                     for Effect in self.Applies[Constants.Buffs]:
                         Effect.Apply(Target)
