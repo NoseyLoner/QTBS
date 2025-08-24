@@ -1,32 +1,48 @@
 from Constants import Constants
-from random import choice
+from random import choice,randint
 from Main import Unit
 from typing import Callable
 from Observers import Controller
 from StatusEffects import *
 
-class Shop:
+class Singleton(type):
+    
+    Instances = {}
 
-    Rarities:dict[Constants,int] = {Constants.Common:45,Constants.Rare:30,Constants.Epic:18,Constants.Legendary:7}
+    def __call__(cls,*args,**kwargs):
+        if cls not in cls.Instances:
+            cls.Instances[cls] = super().__call__(*args,**kwargs)
+        return cls.Instances[cls]
+
+class Shop(metaclass=Singleton):
+
+    RarityChances:dict[Constants,int] = {Constants.Legendary:7,Constants.Epic:18,Constants.Rare:30,Constants.Common:45}
     Basket:list['Upgrades'] = []
 
-    def __init__(self,Slots:int,Rarity:Constants = Constants.Common):
+    def __init__(self,Slots:int = 2,Rarities:list[Constants] = [Constants.Common]):
+        self.Shelf:list[Upgrades] = []
         self.Slots = Slots
-        self.Rarity = Rarity
+        self.Rarities = Rarities
 
+    # Doesn't work because:
+    # 1. doesn't work if the roll is above 45
+    # 2. doesn't account for not having a rarity
     def Stock(self) -> list:
-        upgrades:list[Upgrades] = []
         for i in range(self.Slots):
-            pass
-            # Do rarity generation logic here
+            Roll = randint(1,100)
+            for Rarity in self.Rarities:
+                if Roll <= self.RarityChances[Rarity]:
+                    self.Shelf.append(Upgrades(Rarity))
+                    break
 
+# Below is quite possible some of the worst code I've ever written
 class Upgrades:
 
     PossibleUpgrades:dict[Constants,list[str]] = {
         Constants.Common:["Damage","Health"],
         Constants.Rare:["Damage","MaxHealth","Heal","Armour","Health","Chance"],
-        Constants.Epic:["Damage","MaxHealth","Heal","Armour","Health","Chance","AddApplies","LevelEffects"],
-        Constants.Legendary:["Damage","MaxHealth","Heal","Armour","LevelEffects","Multistack","EffectSlots"]}
+        Constants.Epic:["Damage","MaxHealth","Heal","Armour","Health","Chance","AddApplies","LevelEffects","PartyIncrease"],
+        Constants.Legendary:["Damage","MaxHealth","Heal","Armour","LevelEffects","Multistack","EffectSlots","PartyIncrease"]}
 
     ArithmeticUpgrades:dict[str,dict[Constants,dict[str,list[int | float] | float | Constants]]] = {
         "Damage":{Constants.Common:{"Values":[2,3],"Type":Constants.Additive},
@@ -48,20 +64,16 @@ class Upgrades:
         "Chance":{Constants.Rare:{"Values":1.20,"Type":Constants.Multiplicative},
                   Constants.Epic:{"Values":1.30,"Type":Constants.Multiplicative}}}
 
-    OtherUpgrades:dict[str,dict[str,str | Callable[[Unit | Controller | Shop],None] | list[int]]] = {
-        "AddApplies":{}
-    }
-
-    def __init__(self,Rarity:Constants,Stat:bool):
+    def __init__(self,Rarity:Constants):
         self.Rarity = Rarity
         self.Effect = choice(self.PossibleUpgrades[Rarity])
         if self.Effect in self.ArithmeticUpgrades:
-            self.Type = Constants.ArithmeticUpgrade
             self.Value:int | float = choice(list(Upgrades.ArithmeticUpgrades[self.Effect][self.Rarity]["Values"]))
             self.Activator:Callable = self.ArithmeticActivate
-        elif self.Effect in ["AddApplies","LevelEffects"]:
-            self.Value = Upgrades.Evaluate(self.Effect)
-        
+        else:
+            if self.Effect in ["AddApplies","LevelEffects"]:
+                self.Value:StatusEffect | int = Upgrades.Evaluate(self.Effect)
+            self.Activator:Callable = self.Assign()
 
     def __str__(self):
         if Upgrades.ArithmeticUpgrades[self.Effect][self.Rarity]["Type"] == Constants.Additive:
@@ -70,6 +82,10 @@ class Upgrades:
             return f"Increase {self.Effect} by {self.Value * 100 - 100}%"
         elif self.Effect == "AddApplies":
             return f"Let's a unit apply the {self.Value.Name} Status Effect"
+        elif self.Effect == "LevelEffects":
+            return f"Increases the level of a Status Effect by {self.Value}"
+        elif self.Effect == "Multistack":
+            return f"Let's a unit stack multiple Status Effects at once"
 
     def ArithmeticActivate(self,Unit:Unit):
         if Upgrades.ArithmeticUpgrades[self.Effect][self.Rarity]["Type"] == Constants.Additive:
@@ -85,3 +101,30 @@ class Upgrades:
                 return 1
             elif self.Rarity == Constants.Legendary:
                 return 2
+            
+    def AAA(self,Applicee:Unit):
+        self.Value.Applicate(Applicee)
+
+    def LevelActivate(self,Applicee:Unit,SEName:str):
+        TD:dict[str,StatusEffect] = {"Burning":Burning,"Weakened":Weakened,"Shocked":Shocked,"Targeted":Targeted,"Healing":Healing,"Armoured":Armoured,"Frenzied":Frenzied}
+        Applicee.Applies[TD[SEName].Sign][TD[SEName]] += self.Value
+
+    def MultistackActivate(self,Applicee:Unit):
+        Applicee.Multistack = True
+
+    def EffectSlotsActivate(self,Applicee:Unit):
+        Applicee.EffectSlots += 1
+
+    def PartyIncreaseActivate(self,Applicee:Controller):
+        Applicee.Party += self.Value
+
+    # Why do i have to do this again?
+    def Assign(self):
+        if self.Effect == "AddApplies":
+            self.Activator = self.AAA
+        elif self.Effect == "LevelEffects":
+            self.Activator = self.LevelActivate
+        elif self.Effect == "Multistack":
+            self.Activator = self.MultistackActivate
+        elif self.Effect == "EffectSlots":
+            self.Activator = self.EffectSlotsActivate
