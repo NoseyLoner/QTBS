@@ -36,7 +36,7 @@ class StatusEffect():
     def Effect3(self):
         pass
 
-    Effects = [Effect1,Effect2,Effect3]
+    Effects:list[callable[None],None] = [Effect1,Effect2,Effect3]
 
     @classmethod
     def Apply(cls,Target:'Unit', Level:int = 1,Stacks:int = 1):
@@ -72,6 +72,11 @@ class StatusEffect():
     def Reverse(self):
         for Attribute in self.Reversed:
             setattr(self.Unit, Attribute, self.Reversables[Attribute])
+
+    @classmethod
+    def Applicate(cls,Applicee:Unit):
+        Applicee.Applies[cls.Sign][cls] = 1
+        """Adds the called from class to the applicee list of applied status effects"""
 
 # Some status effects may need additional features like unit ID or a chance system to be fully implemented
 class Burning(StatusEffect):
