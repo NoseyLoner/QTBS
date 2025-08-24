@@ -4,6 +4,7 @@ from Observers import Controller
 from Constants import Constants
 from random import randint,choice
 from math import floor,ceil 
+from typing import Any 
 
 # Game Progress:
 #   For the text based 1.0, as of now (08/03/25) mostly everything up to quantum stuff has been implemented in code, and just needs actully substance/testing:
@@ -24,22 +25,21 @@ Player = Controller(Constants.Friendly)
 Enemy = Controller(Constants.Hostile)
 Controllers:dict[Constants,Controller] = {Constants.Friendly:Player,Constants.Hostile:Enemy}
 
-# self.ID = len(Unit.Units[Team]) is a simple way to add it, but it's probably not the way you want to do it
-# Although it would be easy to replace the name system with
 class Unit:
 
     Units:dict[Constants,dict[str,'Unit']] = {Constants.Friendly:{},Constants.Hostile:{},Constants.Passive:{}}
     Counters:dict[Constants,int] = {Constants.Friendly:0,Constants.Hostile:0,Constants.Passive:0}
     IDs:list[str] = []
 
-    # Applies argument might be redundant?
-    def __init__(self,Damage:int,MaxHealth:int,Armour:int,Heal:int,ID:str,Team:Constants,Applies:dict[Constants,list] = {Constants.Buffs:[],Constants.Nerfs:[]}):
+    def __init__(self,Damage:int,MaxHealth:int,Armour:int,Heal:int,ID:str,Team:Constants):
         self._Alive = True
         self.CanAttack:bool = True
         self.OverHeal:bool = False
+        self.Multistack:bool = False
         self.Affected:list = []
         self.Controller = Controllers[Team]
-        self.Chance = 20 
+        self.Slots:int = 1
+        self.Chance:int = 20
         self.Damage = Damage
         self.MaxHealth = MaxHealth
         self._Health = MaxHealth
@@ -47,8 +47,8 @@ class Unit:
         self.Heal = Heal
         self.ID = ID
         self.Team = Team
-        self.Applies = Applies
-        
+        self.Applies:dict[Constants,dict[Any,int]] = {Constants.Buffs:{},Constants.Nerfs:{}}
+
     @property
     def Alive(self):
         return self._Alive
