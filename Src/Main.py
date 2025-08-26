@@ -152,6 +152,7 @@ class Unit:
         elif len(cls.Units[Constants.Hostile]) == 0:
             raise GameOverException("Friendly Units Win!",Constants.Friendly)
 
+    # Rework inbound
     @classmethod
     def Display(cls,Teams:list[Constants] = Constants.All):
         if Teams == Constants.All:
@@ -171,7 +172,6 @@ class Unit:
                 print("-" * 28,"\n")
                 sleep(1)
 
-    #TODO: Make ID creation better
     @classmethod
     def Create(cls,Amount:int,Team:Constants = Constants.All):
         if Team == Constants.All:
@@ -269,12 +269,11 @@ class Tools:
 
     @staticmethod
     def Shop():
-        pass
+        print("welcome to the Shop!(No Refunds)")
 
     @staticmethod
     def Loop(StartAgain = False):
         if not StartAgain:
-            
             Tools.Shop()
             if len(Unit.Units[Constants.Friendly]) != 3:
                 Unit.Create(3 - len(Unit.Units[Constants.Friendly]),Constants.Friendly)
