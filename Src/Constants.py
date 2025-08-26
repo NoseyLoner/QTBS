@@ -22,4 +22,3 @@ class Constants(Enum):
     # Upgrade Constants
     Additive = "Additive"
     Multiplicative = "Multiplicative"
-    ArithmeticUpgrade = "ArithmeticUpgrade"
