@@ -13,7 +13,10 @@ class Controller(metaclass = Multiton):
 
     def __init__(self,Team:Constants):
         self.Team = Team
+        self.ShopLevel = 1
+        self.ShopSlots = 2
         self.Party:int = 3
+        self.Rarities:list[Constants] = [Constants.Common]
         self.Coins = 0
         self.Messages:list[str] = []
 
