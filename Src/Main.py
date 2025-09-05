@@ -1,10 +1,10 @@
 import os
 from time import sleep
-from Observers import Controller
+from Observers import Multiton,PlayerClass,EnemyClass
 from Constants import Constants
 from random import randint,choice
-from math import floor,ceil 
 from typing import Any 
+from Shop import ShopClass
 
 # Game Progress:
 #   For the text based 1.0, as of now (08/03/25) mostly everything up to quantum stuff has been implemented in code, and just needs actully substance/testing:
@@ -21,25 +21,30 @@ class GameOverException(Exception):
 class CannotAttackException(Exception):
     pass
 
-Player = Controller(Constants.Friendly)
-Enemy = Controller(Constants.Hostile)
-Controllers:dict[Constants,Controller] = {Constants.Friendly:Player,Constants.Hostile:Enemy}
+class OverhealException(Exception):
+    pass
+
+Player = PlayerClass(Constants.Friendly)
+Enemy = EnemyClass(Constants.Hostile)
+Controllers:dict[Constants,Multiton] = {Constants.Friendly:Player,Constants.Hostile:Enemy}
 
 class Unit:
 
-    Units:dict[Constants,dict[str,'Unit']] = {Constants.Friendly:{},Constants.Hostile:{},Constants.Passive:{}}
-    Counters:dict[Constants,int] = {Constants.Friendly:0,Constants.Hostile:0,Constants.Passive:0}
+    Units:dict[Constants,dict[str,'Unit']] = {Constants.Friendly:{},Constants.Hostile:{}}
+    Counters:dict[Constants,int] = {Constants.Friendly:0,Constants.Hostile:0}
     IDs:list[str] = []
+    Shielders:dict[str,'Unit'] = {}
 
     def __init__(self,Damage:int,MaxHealth:int,Armour:int,Heal:int,ID:str,Team:Constants):
         self._Alive = True
         self.CanAttack:bool = True
         self.OverHeal:bool = False
-        self.Multistack:bool = False
-        self.Affected:list = []
+        self._Multistack:bool = False
+        self.Affected:list = [] # Hmmmm
         self.Controller = Controllers[Team]
         self.Slots:int = 1
-        self.Chance:int = 20
+        self.Chance:int = 30
+        self.AP = 1
         self.Damage = Damage
         self.MaxHealth = MaxHealth
         self._Health = MaxHealth
@@ -53,7 +58,6 @@ class Unit:
     def Alive(self):
         return self._Alive
 
-    # Add stuff here when quantum part is added
     @Alive.setter
     def Alive(self,Status:bool):
         if Status:
@@ -67,8 +71,6 @@ class Unit:
     def Health(self):
         return self._Health
     
-    # This is done for now I think
-    # Floor and Ceiling need to added to deal with Targeted and Armoured
     @Health.setter
     def Health(self,Value:int):
         if Value < self._Health:
@@ -86,33 +88,42 @@ class Unit:
             if self._Health > self.MaxHealth and not self.OverHeal:
                 self._Health = self.MaxHealth
 
-    # Remove print statements when controller system is implemented
-    def Attack(self,Target:'Unit'):
-        if not self.CanAttack:
-            raise CannotAttackException(f"{self.ID} cannot attack!")
+    @property
+    def Multistack(self):
+        if not self._Multistack:
+            return 1
         else:
-            if Target.Team is not self.Team:
-                Target.Health -= self.Damage
-                self.Controller.Update(self.ID,f"Unit {self.ID} has attacked Unit {Target.ID}, dealing {self.Damage} damage.")
-                print(f"Unit {self.ID} has attacked Unit {Target.ID}, dealing {self.Damage} damage.")
-                # out of date
-                if self.Applies[Constants.Nerfs] and Tools.Chance(self.Chance):
-                    for Effect in self.Applies[Constants.Nerfs]:
-                        Effect.Apply(Target)
-                        self.Controller.Update(Target.ID,f"Unit {self.ID} has nerfed Unit {Target.ID} with {Effect.Name}.")
+            return [True,Tools.Chance({1:50,2:30,3:20})]
+
+    
+    @Multistack.setter
+    def Multistack(self,Status:bool):
+        self._Multistack = Status
+
+    # Remove print statements when controller system is implemented
+    def Attack(self,Target:'Unit',Magic:bool = False):
+        if not self.CanAttack:
+            raise CannotAttackException(f"Unit {self.ID} cannot attack this turn!")
+        if Target.Team != self.Team:
+            TargetID = Target.ID
+            Shield = Unit.Shielders.get(TargetID)
+            if Magic:
+                Target.Health -= round((self.Damage // 2) * (1 if Shield is None else 1.5))
             else:
-                if Target.Health >= Target.MaxHealth:
-                    # Might get rid of this message later
-                    print(f"{Target.ID} Cannot be healed further.")
-                else:
-                    Target.Health += self.Heal
-                    print(f"Unit {self.ID} has healed Unit {Target.ID} for {self.Heal} health.")
-                # out of date
-                if self.Applies[Constants.Buffs] and Tools.Chance(self.Chance):
-                    for Effect in self.Applies[Constants.Buffs]:
-                        Effect.Apply(Target)
-                        self.Controller.Update(Target.ID,f"Unit {self.ID} has buffed Unit {Target.ID} with {Effect.Name}.")
-                        print(f"Unit {self.ID} has buffed Unit {Target.ID} with {Effect.Name}.")
+                Target.Health -= round(self.Damage * (1 if Shield is None else 1.5))
+            if self.Applies[Constants.Nerfs] and TargetID in Unit.IDs:
+                for Nerf,Nlevel in self.Applies[Constants.Nerfs].items():
+                    if Tools.Chance(self.Chance * 2 if Magic else self.Chance):
+                        Nerf.Apply(Target,Nlevel,Stacks = self.Multistack)
+        else:
+            Target.Health += self.Heal
+            if self.Applies[Constants.Buffs]:
+                for Buff,Blevel in self.Applies[Constants.Buffs].items():
+                   if Tools.Chance(self.Chance):
+                       Buff.Apply(Target,Blevel,Stacks = self.Multistack)
+
+    def Shield(self,Target:'Unit'):
+        Unit.Shielders[Target.ID] = self
 
     @classmethod
     def Strongest(cls,Team:Constants) -> 'Unit':
@@ -144,7 +155,6 @@ class Unit:
             MaxTotal += Unit.MaxHealth
         return (HealthTotal,MaxTotal)
     
-    # Change name to Collapse when quantum stuff is added
     @classmethod
     def Check(cls):
         if len(cls.Units[Constants.Friendly]) == 0:
@@ -189,15 +199,29 @@ class Unit:
                 cls.IDs.append(ID)
                 cls.Units[Team]
 
+    @classmethod
+    def Tick(cls):
+        for TTeam in cls.Units:
+            for TUnit in cls.Units[TTeam].values():
+                if TUnit.Affected:
+                    for TEffect in TUnit.Affected:
+                        Clear:bool = TEffect.Effect()
+                        TUnit.Controller.Update(TUnit.ID,f"Unit {TUnit.ID} was affected by {TEffect.Name} and has {'been cleared' if Clear else f'{TEffect.Turns} turns remaining.'}")
 
 class Tools:
 
     @staticmethod
-    def Chance(Probability:int):
-        Result = randint(1,100)
-        if Result <= Probability:
-            return True
-        return False
+    def Chance(Probability:int | dict[Any,int]) -> bool:
+        if isinstance(Probability,int):
+            Result = randint(1,100)
+            if Result <= Probability:
+                return True
+            return False
+        else:
+            Result = randint(1,100)
+            for Key,Value in Probability.items():
+                if Result <= Value:
+                    return Key
 
     @staticmethod
     def Starter() -> bool:
@@ -269,35 +293,44 @@ class Tools:
 
     @staticmethod
     def Shop():
-        print("welcome to the Shop!(No Refunds)")
-
-    @staticmethod
-    def Loop(StartAgain = False):
-        if not StartAgain:
-            Tools.Shop()
-            if len(Unit.Units[Constants.Friendly]) != 3:
-                Unit.Create(3 - len(Unit.Units[Constants.Friendly]),Constants.Friendly)
+        Shop = ShopClass()
+        while True:
             Tools.Clear()
-
+            Shop.Display()
+            try:
+                ItemID = input("Enter the ID of the item you wish to buy (e.g. U1,S2) or press 'E' to exit.\n> ").upper()
+                if ItemID[0] not in ["U","S","E"] or ItemID[1] not in range(1,len(Shop.Shelf["Upgrades"]) + 1) or ItemID not in range(1,len(Shop.Shelf["ShopUpgrades"])):
+                    raise ValueError("Invalid Item ID! Please try again or press 'E' to exit")
+                else:
+                    try:
+                        Shop.Purchase(ItemID,Player)
+                    except ValueError as Declined:
+                        print(Declined)
+                        continue
+                    except KeyboardInterrupt as Exit:
+                        print(Exit)
+                        Tools.Pause(Message = "Enter any key to exit the shop: ")
+                        Tools.Wait(StartingMessage = "Exiting Shop...")
+                        break
+            except ValueError as Invalid:
+                print(Invalid)
+ 
 # The main function doesn't use the Controllers to notify the player
-def Main(Looping:bool = False):
-    if not Looping:
-        # Not the first concept anymore
-        print("QTBS: First Concept.")
+def Main():
+    # Not the first concept anymore
+    print("QTBS: First Concept.")
 
-        Unit.Create(3,Constants.Friendly)
-        Unit.Create(3,Constants.Hostile)
+    Unit.Create(3,Constants.Friendly)
+    Unit.Create(3,Constants.Hostile)
 
-        Tools.Wait(StartingMessage = "Setting Up...")
-        
-        Tutor = input("Press 'T' to play the tutorial or any other key to skip: ").capitalize()
-        if Tutor == "T":
-            Tools.Wait(Time = 1,StartingMessage = "Starting Tutorial...")
-            Tools.Tutorial()
-            Tools.Clear()
-    else:
-        Tools.Loop()
+    Tools.Wait(StartingMessage = "Setting Up...")
     
+    Tutor = input("Press 'T' to play the tutorial or any other key to skip: ").capitalize()
+    if Tutor == "T":
+        Tools.Wait(Time = 1,StartingMessage = "Starting Tutorial...")
+        Tools.Tutorial()
+        Tools.Clear()
+
     Turn = Tools.Starter()
     sleep(1)
     Tools.Wait(Time = 1,StartingMessage = "Starting Game...")
@@ -308,18 +341,10 @@ def Main(Looping:bool = False):
         try:
             Unit.Check()
         except GameOverException as Winner:
-            Controllers[Winner.args[1]].Coins += 1
+            # Controllers[Winner.args[1]].Coins += 1
             print(Winner)
-            print("You know have two options, you can\n1. Continue playing by looping, gaining coin(s) to spend on upgrades\nOr\n2. Exit the game\n")
-            while True:
-                Choice = input("Enter 1 to Loop or 2 to Exit: ")
-                if Choice == "1":
-                    Tools.Wait(StartingMessage = "Looping...")
-                    Main(Looping = True)
-                elif Choice == "2":
-                    Tools.Exit()
-                else:
-                    print("Invalid choice, please try again.")
+            Tools.Pause(Message = "Enter any key to end the game: ")
+            Tools.Exit()
         Unit.Display([Constants.Friendly,Constants.Hostile])
         if Turn:
             print("Player's Turn:")
@@ -344,9 +369,6 @@ def Main(Looping:bool = False):
                 Target = Unit.Units[Constants.Hostile][TargetID]
             elif TargetID[0] == "F":
                 Target = Unit.Units[Constants.Friendly][TargetID]
-            # Unused for now
-            else:
-                Target = Unit.Units[Constants.Passive][TargetID]
             Attacker.Attack(Target)
             sleep(1)
         else:

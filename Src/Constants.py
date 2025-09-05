@@ -4,7 +4,6 @@ class Constants(Enum):
 
     # Team Constants
     Hostile = "Hostile"
-    Passive = "Passive"
     Friendly = "Friendly"
     All = "All"
     
@@ -22,3 +21,9 @@ class Constants(Enum):
     # Upgrade Constants
     Additive = "Additive"
     Multiplicative = "Multiplicative"
+
+    # Game State Constants
+    Start = "Start"
+    End = "End"
+    Shopping = "Shopping"
+    Turn = "Turn"

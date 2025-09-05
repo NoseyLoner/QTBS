@@ -3,30 +3,26 @@ from random import choice
 from Main import Unit,Tools
 from Constants import Constants
 
-# WARNINGs!!!
-#   - Status Effects aren't updated to handle the rework of Unit.Units
-#   - Status Effects STILL aren't reversable (seriously Bimi you made the varible two weeks ago)
-
 class NotImplemented(Warning):
     pass
 
-# Status Effects also need some kind of function or decorator to add them to the game loop
 class StatusEffect():
+    # Add a status effect that can cure other status effects
 
     Name:str = ""
     Sign:Constants = Constants.Null
     Effects:list = []
     Durations:list = []
-    Reversable:bool = None
+    Reversable:bool = False
     Reversables:list = []
 
-    def __init__(self,Unit:'Unit',Level:int = 1,Stacks:int = 1):
+    def __init__(self,Unit:'Unit',Level:int,Stacks:int = 1):
         self.Unit = Unit
         self.Level = Level
         self.Stacks = Stacks
         self.Turns = self.Durations[Level - 1] * Stacks
-        self.Reversed = {Attribute:getattr(Unit,Attribute) for Attribute in self.Reversables}
-    
+        self.Reversed:dict[str,int] = {Attribute:getattr(Unit,Attribute) for Attribute in self.Reversables}
+
     def Effect1(self):
         pass
     
@@ -36,25 +32,23 @@ class StatusEffect():
     def Effect3(self):
         pass
 
-    Effects:list[callable[None],None] = [Effect1,Effect2,Effect3]
+    Effects:list = [Effect1,Effect2,Effect3]
 
     @classmethod
-    def Apply(cls,Target:'Unit', Level:int = 1,Stacks:int = 1):
+    def Apply(cls,Target:'Unit',Level:int,Stacks:int = 1):
         for Effect in Target.Affected:
             if Effect.Name == cls.Name:
                 cls.Stack(Target,Effect,Level,Stacks)
                 return
-        Target.Affected.append(cls(Target, Level, Stacks))
+        Target.Affected.append(cls(Target,Level,Stacks))
 
     # I might have to have seperate effect procedures for each effect to get rid of permanent effects
-    def Effect(self,Target:'Unit'):
+    def Effect(self):
         self.Effects[self.Level - 1]()
         self.Turns -= 1
         if self.Turns <= 0:
-            Target.Affected.remove(self)
-            if self.Reversable:
-                self.Reverse()
-            del self
+            self.Remove()
+            return True
     
     @classmethod
     def Stack(cls,Target:'Unit',Instance:'StatusEffect',Level:int,Stacks:int):
@@ -63,20 +57,25 @@ class StatusEffect():
             if Instance.Reversable:
                 Instance.Reverse()
             del Instance
-            Target.Affected.append(cls(Target, Level, Stacks))
+            Target.Affected.append(cls(Target,Level,Stacks))
         else:
             Instance.Turns += cls.Durations[Level - 1] * Stacks
 
     # Might chance name to Remove
-    # If Status Effects are meesed with at the start and end of the turn, this might not be needed
     def Reverse(self):
-        for Attribute in self.Reversed:
-            setattr(self.Unit, Attribute, self.Reversables[Attribute])
+        for Attribute,Value in self.Reversed.items():
+            setattr(self.Unit,Attribute,Value)
 
+    def Remove(self):
+        self.Unit.Affected.remove(self)
+        if self.Reversable:
+            self.Reverse()
+        del self
+
+    # Dumb name
     @classmethod
     def Applicate(cls,Applicee:Unit):
         Applicee.Applies[cls.Sign][cls] = 1
-        """Adds the called from class to the applicee list of applied status effects"""
 
 # Some status effects may need additional features like unit ID or a chance system to be fully implemented
 class Burning(StatusEffect):
@@ -93,7 +92,7 @@ class Burning(StatusEffect):
         if Tools.Chance(15):
             Targets = 1
             while Targets != 0:
-                Possible = choice(Unit.Units[self.Unit.Team])
+                Possible = choice(Unit.Units[self.Unit.Team].values())
                 if Possible != self.Unit:
                     Possible.Health -= 1
                     Targets -= 1
@@ -103,7 +102,7 @@ class Burning(StatusEffect):
         if Tools.Chance(15):
             Targets = 1
             while Targets != 0:
-                Possible = choice(Unit.Units[self.Unit.Team])
+                Possible = choice(Unit.Units[self.Unit.Team].values())
                 if Possible != self.Unit:
                     Possible.Health -= 1
                     Targets -= 1
@@ -115,7 +114,7 @@ class Burning(StatusEffect):
         if Tools.Chance(20):
                 Targets = 2
                 while Targets != 0:
-                    Possible = choice(Unit.Units[self.Unit.Team])
+                    Possible = choice(Unit.Units[self.Unit.Team].values())
                     if Possible != self.Unit:
                         Possible.Health -= 2
                         Targets -= 1
@@ -176,6 +175,7 @@ class Shocked(StatusEffect):
     Sign:Constants = Constants.Nerfs
     # Durations are increased as Shocking effects are chance based
     Durations:list = [7,6,5]
+    Reversable:bool = False
 
     # Chance to deal damage is set at 20% for Shocked1 & 2, and at 25% for Shocked3
     def Shocked1(self):
@@ -190,7 +190,7 @@ class Shocked(StatusEffect):
             if Tools.Chance(15):
                 Targets = 1
                 while Targets != 0:
-                    Possible = choice(Unit.Units[self.Unit.Team])
+                    Possible = choice(Unit.Units[self.Unit.Team].values())
                     if Possible != self.Unit:
                         Possible.Health -= 1
                         Targets -= 1
@@ -202,7 +202,7 @@ class Shocked(StatusEffect):
             if Tools.Chance(15):
                 Targets = choice([1, 2])
                 while Targets != 0:
-                    Possible = choice(Unit.Units[self.Unit.Team])
+                    Possible = choice(Unit.Units[self.Unit.Team].values())
                     if Possible != self.Unit:
                         Possible.Health -= choice([1, 2])
                         Targets -= 1
@@ -215,6 +215,8 @@ class Targeted(StatusEffect):
     Name:str = "Targeted"
     Sign:Constants = Constants.Nerfs
     Durations:list = [4,4,4]
+    Reversable:bool = True
+    Reversables:list = ["Armour"]
 
     def Targeted1(self):
         self.Unit.Armour = round(self.Unit.Armour * 1.15,2)
@@ -259,6 +261,8 @@ class Armoured(StatusEffect):
     Name:str = "Armoured"
     Sign:Constants = Constants.Buffs
     Durations:list = [3,3,3]
+    Reversable:bool = True
+    Reversables:list = ["Armour"]
 
     def Armoured1(self):
         self.Unit.Armour = round(self.Unit.Armour * 1.20,2)
@@ -276,6 +280,8 @@ class Frenzied(StatusEffect):
     Name:str = "Frenzied"
     Sign:Constants = Constants.Buffs
     Durations:list = [3,3,3]
+    Reversable:bool = True
+    Reversables:list = ["Damage","MaxHealth"]
 
     F1:bool = False
     def Frenzied1(self):
