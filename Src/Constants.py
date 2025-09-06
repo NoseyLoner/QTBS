@@ -22,8 +22,11 @@ class Constants(Enum):
     Additive = "Additive"
     Multiplicative = "Multiplicative"
 
-    # Game State Constants
-    Start = "Start"
-    End = "End"
-    Shopping = "Shopping"
-    Turn = "Turn"
+    # Event Constants
+    Attacking = "Attacking"
+    UnitDeath = "UnitDeath"
+    Infliction = "Infliction"
+    Trigger = "Trigger"
+    Clearing = "Clearing"
+    Healing = "Healing"
+    Consuming = "Consuming"
