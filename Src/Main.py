@@ -6,14 +6,17 @@ from random import randint,choice
 from typing import Any 
 from Shop import ShopClass
 
-# Game Progress:
-#   For the text based 1.0, as of now (08/03/25) mostly everything up to quantum stuff has been implemented in code, and just needs actully substance/testing:
-#       - Basic game concept (Done)
-#       - Status Effects (Done, ideas will be added with the quantum stuff and will be planned out in the book)
-#       - Quantum Game Loop (Entanglement,(Superpositon?),Collapse) (Next)
-#   (Note Quantum stuff will be planed out first in the book before any code is written, as will likely require changing everything)
-#   Once all of the above is done, the only thing left is to make sure the game is actully fun (as right now it is boring, tedious and repetitive) and then release
-#   Then, visuals will begin with the help of Pygame
+# Final TODO:
+#   Finsh Observers system (ongoing)
+#   update party size upgrade (not done)
+#   add action point upgrade (not done)
+#   add multiple unit turn taking (not done)
+#   add enemy "AI" (not done)
+#   add add enemy level (not done)
+#   consider moving Unit class to a seperate file (not considered yet)
+#   add stages + areas (not done)
+#   do checking/bugfixes (not done)
+#   done!
 
 class GameOverException(Exception):
     pass
