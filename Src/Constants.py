@@ -2,6 +2,9 @@ from enum import Enum
 
 class Constants(Enum):
 
+    def __str__(self) -> str:
+        return self.value   
+
     # Team Constants
     Hostile = "Hostile"
     Friendly = "Friendly"
@@ -22,6 +25,11 @@ class Constants(Enum):
     Additive = "Additive"
     Multiplicative = "Multiplicative"
 
+    # State Constants
+    Start = "Start"
+    End = "End"
+    Shopping = "Shopping"
+
     # Event Constants
     Attacking = "Attacking"
     UnitDeath = "UnitDeath"
@@ -29,4 +37,5 @@ class Constants(Enum):
     Trigger = "Trigger"
     Clearing = "Clearing"
     Healing = "Healing"
-    Consuming = "Consuming"
+    Consumption = "Consumption"
+    Blocked = "Blocked"
