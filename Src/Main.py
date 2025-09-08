@@ -8,6 +8,7 @@ from Shop import ShopClass
 
 # Final TODO:
 #   Finsh Observers system (ongoing)
+#   consider moving dead unit/status effect to a temporary list before deleting (not considered yet)
 #   update party size upgrade (not done)
 #   add action point upgrade (not done)
 #   add multiple unit turn taking (not done)
