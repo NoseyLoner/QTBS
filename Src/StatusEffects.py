@@ -3,9 +3,6 @@ from random import choice
 from Main import Unit,Tools
 from Constants import Constants
 
-class NotImplemented(Warning):
-    pass
-
 class StatusEffect():
     # Add a status effect that can cure other status effects
 
