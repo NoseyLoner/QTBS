@@ -3,7 +3,7 @@ from enum import Enum
 class Constants(Enum):
 
     def __str__(self) -> str:
-        return self.value   
+        return self.value
 
     # Team Constants
     Hostile = "Hostile"
@@ -38,4 +38,5 @@ class Constants(Enum):
     Clearing = "Clearing"
     Healing = "Healing"
     Consumption = "Consumption"
+    Shielding = "Shielding"
     Blocked = "Blocked"
