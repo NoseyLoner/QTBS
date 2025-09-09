@@ -7,17 +7,18 @@ from typing import Any
 from Shop import ShopClass
 
 # Final TODO:
-#   Finsh Observers system (ongoing)
-#   consider moving dead unit/status effect to a temporary list before deleting (not considered yet)
+#   Finish & implement Observers system (ongoing)
 #   update party size upgrade (not done)
 #   add action point upgrade (not done)
 #   add multiple unit turn taking (not done)
+#   consider adding more status effects (not considered yet)
 #   add enemy "AI" (not done)
 #   add add enemy level (not done)
+#   consider moving dead unit/status effect to a temporary list before deleting (not considered yet)
 #   consider moving Unit class to a seperate file (not considered yet)
 #   add stages + areas (not done)
 #   do checking/bugfixes (not done)
-#   done!
+#   DONE!:)
 
 class GameOverException(Exception):
     pass
@@ -25,7 +26,7 @@ class GameOverException(Exception):
 class CannotAttackException(Exception):
     pass
 
-class OverhealException(Exception):
+class OverhealException(Exception): #Hmmmm??
     pass
 
 Player = PlayerClass(Constants.Friendly)

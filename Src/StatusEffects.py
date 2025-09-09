@@ -166,7 +166,7 @@ class Weakened(StatusEffect):
 
     Effects = [Weakened1, Weakened2, Weakened3]
 
-class Shocked(StatusEffect):
+class Shocked(StatusEffect): # Consider overwrinting stackk method to allow extra stacks to increase chance, not duration
 
     Name:str = "Shocked"
     Sign:Constants = Constants.Nerfs
@@ -308,3 +308,6 @@ class Frenzied(StatusEffect):
             self.F3 = True
 
     Effects = [Frenzied1, Frenzied2, Frenzied3]
+
+class Leeched(StatusEffect):
+    pass
