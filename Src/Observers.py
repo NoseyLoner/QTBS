@@ -1,8 +1,8 @@
 from Constants import Constants
 from typing import Any
 from shutil import get_terminal_size
-import rich
 from itertools import zip_longest
+import rich
 
 class Multiton(type):
 
@@ -13,8 +13,8 @@ class Multiton(type):
             cls.Instances[Key] = super().__call__(Key,*args,**kwargs)
         return cls.Instances[Key]
 
-# WIP!!!
-class Observer:
+# Name is a work in progress
+class Overseer:
 
     Messages:dict[Constants,dict[str,list[dict[str,str | Constants]]]] = {
         Constants.Start:{},
@@ -26,25 +26,53 @@ class Observer:
             case Constants.Start:
                 if len(self.Messages[Constants.Start]) > 0:
                     rich.print(f"[underline]{Team} Start Of Turn Updates:[/underline]")
-                    TSMessages = []
                     for ID in self.Messages[Constants.Start]:
                         if str(Team)[0] in ID:
-                            TIndent:int = 4 
-                            TSMessages.append(ID)
+                            TSIndent:int = 4 
+                            print(ID)
                             for TSMessage in self.Messages[Constants.Start][ID]:
-                                TSMessages.append(f"{' '*TIndent}{TSMessage['Announcement']}")
+                                print(f"{' '*TSIndent}{TSMessage['Announcement']}")
                                 if "Effect" in TSMessage:
-                                    TIndent += 4
-                                    TSMessages.append(f"{' '*TIndent}{TSMessage['Effect']}")
-                                    TIndent -= 4
-                    for TSMessage in TSMessages:
-                        print(f"{TSMessage}")
+                                    TSIndent += 4
+                                    print(f"{' '*TSIndent}{TSMessage['Effect']}")
+                                    TSIndent -= 4
                     self.Messages[Constants.Start].clear()
                 else:
-                    print("[italic]No Start of Turn Updates.[/italic]")
+                    rich.print("[italic]No Start of Turn Updates.[/italic]")
             case Constants.End:
                 if len(self.Messages[Constants.End]) > 0:
-                    pass
+                    rich.print(f"[underline]{Team} End Of Turn Updates:[/underline]")
+                    for ID in self.Messages[Constants.End]:
+                        if str(Team)[0] in ID:
+                            TSIndent:int = 4 
+                            print(ID)
+                            for TSMessage in self.Messages[Constants.End][ID]:
+                                print(f"{' '*TSIndent}{TSMessage['Announcement']}")
+                                if "Effect" in TSMessage:
+                                    TSIndent += 4
+                                    print(f"{' '*TSIndent}{TSMessage['Effect']}")
+                                    TSIndent -= 4
+                    self.Messages[Constants.End].clear()
+                else:
+                    rich.print("[italic]No End of Turn Updates.[/italic]")
+            case Constants.Shopping:
+                if len(self.Messages[Constants.Shopping]) > 0:
+                    rich.print(f"[underline]{Team} Shopping Updates:[/underline]")
+                    for ID in self.Messages[Constants.Shopping]:
+                        if str(Team)[0] in ID:
+                            TSIndent:int = 4 
+                            print(ID)
+                            for TSMessage in self.Messages[Constants.Shopping][ID]:
+                                print(f"{' '*TSIndent}{TSMessage['Announcement']}")
+                                if "Effect" in TSMessage:
+                                    TSIndent += 4
+                                    print(f"{' '*TSIndent}{TSMessage['Effect']}")
+                                    TSIndent -= 4
+                    self.Messages[Constants.Shopping].clear()
+                else:
+                    rich.print("[italic]No Shopping Updates.[/italic]")
+            case _:
+                raise ValueError("Unrecognised State Type!")
 
     def Update(self,Event:Constants,PrincipalID:str,Attribute:Any,BValue:Any,AValue:Any,OtherID:list[str] = None):
         match Event:
@@ -54,7 +82,7 @@ class Observer:
                 self.Messages[Constants.End][PrincipalID].append({"Announcement":AttackAnnouncement,"Effect":AttackEffect,"Event":Event})
             case Constants.UnitDeath:
                 DeathAnnouncement:str = f"Unit {PrincipalID} has killed Unit {OtherID[0]}!"
-                self.Messages[Constants.End][PrincipalID] = [{"Announcement":DeathAnnouncement,"Event":Event}]
+                self.Messages[Constants.End][PrincipalID].append({"Announcement":DeathAnnouncement,"Event":Event})
             case Constants.Infliction:
                 inflictionAnnouncement:str = f"Unit {PrincipalID} has inflicted Unit {OtherID[0]}! with {Attribute}"
                 self.Messages[Constants.End][PrincipalID].append({"Announcement":inflictionAnnouncement,"Event":Event})
@@ -68,7 +96,7 @@ class Observer:
                 HealingAnnouncement:str = f"Unit {PrincipalID} healed Unit {OtherID[0]}:"
                 HealingEffect:str = f"Health: {BValue} -> {AValue}"
                 self.Messages[Constants.End][PrincipalID].append({"Announcement":HealingAnnouncement,"Effect":HealingEffect,"Event":Event})
-            case Constants.Consumption:
+            case Constants.Consumption: # Hmmm
                 ConsumptionAnnouncement:str = f"Unit {PrincipalID} has consumed Upgrade {OtherID[0]}!:"
                 ConsumptionEffect:str = f"Unit {PrincipalID} {Attribute}: {BValue} -> {AValue}"
                 self.Messages[Constants.Shopping][PrincipalID].append({"Announcement":ConsumptionAnnouncement,"Effect":ConsumptionEffect,"Event":Event})
