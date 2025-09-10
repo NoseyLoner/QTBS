@@ -13,13 +13,13 @@ class Multiton(type):
             cls.Instances[Key] = super().__call__(Key,*args,**kwargs)
         return cls.Instances[Key]
 
-# Name is a work in progress
-class Overseer:
+class GameClass:
 
-    Messages:dict[Constants,dict[str,list[dict[str,str | Constants]]]] = {
-        Constants.Start:{},
-        Constants.End:{},
-        Constants.Shopping:{}}
+    def __init__(self):
+        self.Messages:dict[Constants,dict[str,list[dict[str,str | Constants]]]] = {
+            Constants.Start:{},
+            Constants.End:{},
+            Constants.Shopping:{}}
 
     def Display(self,State:Constants,Team:Constants):
         match State:
@@ -74,7 +74,7 @@ class Overseer:
             case _:
                 raise ValueError("Unrecognised State Type!")
 
-    def Update(self,Event:Constants,PrincipalID:str,Attribute:Any,BValue:Any,AValue:Any,OtherID:list[str] = None):
+    def Update(self,PrincipalID:str,Event:Constants,Attribute:Any = None,BValue:Any = None,AValue:Any = None,OtherID:list[str] = None):
         match Event:
             case Constants.Attacking:
                 AttackAnnouncement:str = f"Unit {PrincipalID} attacked Unit {OtherID[0]}:"
@@ -84,7 +84,7 @@ class Overseer:
                 DeathAnnouncement:str = f"Unit {PrincipalID} has killed Unit {OtherID[0]}!"
                 self.Messages[Constants.End][PrincipalID].append({"Announcement":DeathAnnouncement,"Event":Event})
             case Constants.Infliction:
-                inflictionAnnouncement:str = f"Unit {PrincipalID} has inflicted Unit {OtherID[0]}! with {Attribute}"
+                inflictionAnnouncement:str = f"Unit {PrincipalID} has inflicted Unit {OtherID[0]} with {Attribute}"
                 self.Messages[Constants.End][PrincipalID].append({"Announcement":inflictionAnnouncement,"Event":Event})
             case Constants.Trigger:
                 TriggerAnnouncement:str = f"Unit {PrincipalID} was affected by {Attribute}, {Attribute.Turns} turns left"
@@ -101,7 +101,7 @@ class Overseer:
                 ConsumptionEffect:str = f"Unit {PrincipalID} {Attribute}: {BValue} -> {AValue}"
                 self.Messages[Constants.Shopping][PrincipalID].append({"Announcement":ConsumptionAnnouncement,"Effect":ConsumptionEffect,"Event":Event})
             case Constants.Blocked:
-                BlockAnnouncement:str = f"Unit {PrincipalID} blocked unit {OtherID[0]}'s attack on unit {OtherID[1]}!"
+                BlockAnnouncement:str = f"Unit {PrincipalID} was blocked from attacking Unit {OtherID[0]} by {OtherID[1]}:"
                 BlockEffect:str = f"Unit {PrincipalID}'s Health: {BValue} -> {AValue}"
                 self.Messages[Constants.End][PrincipalID].append({"Announcement":BlockAnnouncement,"Effect":BlockEffect,"Event":Event})
             case Constants.Shielding:
@@ -113,13 +113,13 @@ class Overseer:
 class PlayerClass(metaclass = Multiton):
 
     def __init__(self,Team:Constants):
-        self.Messages:Any = None
         self.Team = Team
-        self.ShopLevel:int = 1
-        self.ShopSlots:int = 2
         self.Party:int = 3
         self.Coins:int = 0
         self.Basket:list = []
+
+    def Consume(self):
+        pass
 
 class EnemyClass(metaclass = Multiton):
 
