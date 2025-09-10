@@ -1,9 +1,11 @@
 from Constants import Constants
 from random import choice,randint
 from typing import Callable
-from Observers import PlayerClass
+from Observers import PlayerClass,GameClass
 from StatusEffects import *
 import rich
+
+Player = PlayerClass(Constants.Friendly)
 
 class Singleton(type):
     
@@ -14,7 +16,7 @@ class Singleton(type):
             cls.Instances[cls] = super().__call__(*args,**kwargs)
         return cls.Instances[cls]
 
-class ShopClass(metaclass=Singleton):
+class ShopClass(metaclass = Singleton):
 
     RarityChances:dict[Constants,int] = {Constants.Legendary:7,Constants.Epic:25,Constants.Rare:55,Constants.Common:100}
     Rarities:list[Constants] = [Constants.Common]
@@ -89,6 +91,29 @@ class ShopClass(metaclass=Singleton):
             else:
                 Customer.Coins -= self.Shelf["Shop Upgrades"][Choice[1] - 1]
                 Customer.Basket.append(self.Shelf["Shop Upgrades"].pop(Choice[1] - 1))
+
+    def Enter(self):
+        Shop = ShopClass()
+        while True:
+            Tools.Clear()
+            Shop.Display()
+            try:
+                ItemID = input("Enter the ID of the item you wish to buy (e.g. U1,S2) or press 'E' to exit.\n> ").capitalize()
+                if ItemID[0] not in ["U","S","E"] or ItemID[1] not in range(1,len(Shop.Shelf["Upgrades"]) + 1) or ItemID not in range(1,len(Shop.Shelf["ShopUpgrades"])):
+                    raise ValueError("Invalid Item ID! Please try again or press 'E' to exit")
+                else:
+                    try:
+                        Shop.Purchase(ItemID,Player)
+                    except ValueError as Declined:
+                        print(Declined)
+                        continue
+                    except KeyboardInterrupt as Exit:
+                        print(Exit)
+                        Tools.Pause(Message = "Enter any key to exit the shop: ")
+                        Tools.Wait(StartingMessage = "Exiting Shop...")
+                        break
+            except ValueError as Invalid:
+                print(Invalid)
 
 class Upgrades:
 
@@ -177,6 +202,8 @@ class Upgrades:
     def __len__(self):
         return len(str(self))
 
+    # What?
+    # I need to do something about the arguments, how would I pass in the right consumer without having to double check the type?
     def __call__(self,Consumer:PlayerClass | ShopClass,SEName:str | None = None):
         match Consumer:
             case PlayerClass():
