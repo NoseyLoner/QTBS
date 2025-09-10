@@ -1,44 +1,52 @@
 import os
 from time import sleep
-from Observers import Multiton,PlayerClass,EnemyClass
+from Observers import GameClass,Multiton,PlayerClass,EnemyClass
 from Constants import Constants
 from random import randint,choice
 from typing import Any 
-from Shop import ShopClass
+from Shop import ShopClass # Eventually
 
 # Final TODO:
-#   Finish & implement Observers system (ongoing)
+#   Finish & implement Observers system (last step)
+#   check out the shop + PlayerClass (not done)
 #   update party size upgrade (not done)
 #   add action point upgrade (not done)
 #   add multiple unit turn taking (not done)
+#   Update display method (not done)
 #   consider adding more status effects (not considered yet)
+#   consider moving Unit class to a seperate file (not considered yet)
 #   add enemy "AI" (not done)
 #   add add enemy level (not done)
 #   consider moving dead unit/status effect to a temporary list before deleting (not considered yet)
-#   consider moving Unit class to a seperate file (not considered yet)
-#   add stages + areas (not done)
+#   add stages + areas + shop in game loop (not done)
 #   do checking/bugfixes (not done)
 #   DONE!:)
 
 class GameOverException(Exception):
     pass
 
-class CannotAttackException(Exception):
+class CannotAttackException(Exception): #Hm.
     pass
 
-class OverhealException(Exception): #Hmmmm??
+class OverhealException(Exception): #Hmmmm?? 
+    pass
+
+class ActionPointException(Exception): #Hmmmm?!
     pass
 
 Player = PlayerClass(Constants.Friendly)
 Enemy = EnemyClass(Constants.Hostile)
 Controllers:dict[Constants,Multiton] = {Constants.Friendly:Player,Constants.Hostile:Enemy}
+Game = GameClass()
 
+# Move to seperate file
 class Unit:
 
     Units:dict[Constants,dict[str,'Unit']] = {Constants.Friendly:{},Constants.Hostile:{}}
     Counters:dict[Constants,int] = {Constants.Friendly:0,Constants.Hostile:0}
     IDs:list[str] = []
     Shielders:dict[str,'Unit'] = {}
+    DeadUnits:list['Unit'] = []
 
     def __init__(self,Damage:int,MaxHealth:int,Armour:int,Heal:int,ID:str,Team:Constants):
         self._Alive = True
@@ -66,11 +74,12 @@ class Unit:
     @Alive.setter
     def Alive(self,Status:bool):
         if Status:
-            pass
+            self._Alive = True # Hmmm
         else:
             Unit.Units[self.Team].pop(self.ID)
             Unit.IDs.remove(self.ID)
-            del self
+            Unit.DeadUnits.append(self)
+            self._Alive = False
 
     @property
     def Health(self):
@@ -98,37 +107,57 @@ class Unit:
         if not self._Multistack:
             return 1
         else:
-            return [True,Tools.Chance({1:50,2:30,3:20})]
+            return [True,Tools.Chance({1:30,2:80,3:100})]
 
     
     @Multistack.setter
     def Multistack(self,Status:bool):
         self._Multistack = Status
 
-    # Remove print statements when controller system is implemented
     def Attack(self,Target:'Unit',Magic:bool = False):
         if not self.CanAttack:
             raise CannotAttackException(f"Unit {self.ID} cannot attack this turn!")
+        THealth = Target.Health
         if Target.Team != self.Team:
             TargetID = Target.ID
-            Shield = Unit.Shielders.get(TargetID)
-            if Magic:
-                Target.Health -= round((self.Damage // 2) * (1 if Shield is None else 1.5))
+            Shielder = Unit.Shielders.get(TargetID)
+            # Hmmmmmm...
+            if Shielder is not None:
+                SHealth = Shielder.Health
+                if Magic:
+                    Shielder.Health -= round((self.Damage / 2) * 1.5)
+                else:
+                    Shielder.Health -= round(self.Damage / 2)
+                if Shielder.Alive:
+                    Game.Update(self.ID,Constants.Blocked,BValue = SHealth,AValue = Shielder.Health,OtherID = [TargetID,Shielder.ID])
+                else:
+                    Game.Update(self.ID,Constants.UnitDeath,OtherID = [Shielder.ID])
             else:
-                Target.Health -= round(self.Damage * (1 if Shield is None else 1.5))
+                if Magic:
+                    Target.Health -= round(self.Damage / 2)
+                else:
+                    Target.Health -= self.Damage
+                if Target.Alive:
+                    Game.Update(self.ID,Constants.Attacking,BValue = THealth,AValue = Target.Health,OtherID = [TargetID])
+                else:
+                    Game.Update(self.ID,Constants.UnitDeath,OtherID = [TargetID])
             if self.Applies[Constants.Nerfs] and TargetID in Unit.IDs:
                 for Nerf,Nlevel in self.Applies[Constants.Nerfs].items():
                     if Tools.Chance(self.Chance * 2 if Magic else self.Chance):
                         Nerf.Apply(Target,Nlevel,Stacks = self.Multistack)
+                        Game.Update(self.ID,Constants.Infliction,Attribute = Nerf.Name,OtherID = [TargetID])
         else:
             Target.Health += self.Heal
+            Game.Update(self.ID,Constants.Healing,BValue = THealth,AValue = Target.Health,OtherID = [Target.ID])
             if self.Applies[Constants.Buffs]:
                 for Buff,Blevel in self.Applies[Constants.Buffs].items():
                    if Tools.Chance(self.Chance):
                        Buff.Apply(Target,Blevel,Stacks = self.Multistack)
+                       Game.Update(self.ID,Constants.Infliction,Attribute = Buff.Name,OtherID = [Target.ID])
 
     def Shield(self,Target:'Unit'):
         Unit.Shielders[Target.ID] = self
+        Game.Update(self.ID,Constants.Shielding,OtherID = [Target.ID])
 
     @classmethod
     def Strongest(cls,Team:Constants) -> 'Unit':
@@ -162,6 +191,9 @@ class Unit:
     
     @classmethod
     def Check(cls):
+        for DeadUnit in cls.DeadUnits:
+            cls.DeadUnits.remove(DeadUnit)
+            del DeadUnit
         if len(cls.Units[Constants.Friendly]) == 0:
             raise GameOverException("Hostile Units Win!",Constants.Hostile)
         elif len(cls.Units[Constants.Hostile]) == 0:
@@ -187,6 +219,7 @@ class Unit:
                 print("-" * 28,"\n")
                 sleep(1)
 
+    # Update for party size
     @classmethod
     def Create(cls,Amount:int,Team:Constants = Constants.All):
         if Team == Constants.All:
@@ -210,8 +243,11 @@ class Unit:
             for TUnit in cls.Units[TTeam].values():
                 if TUnit.Affected:
                     for TEffect in TUnit.Affected:
-                        Clear:bool = TEffect.Effect()
-                        TUnit.Controller.Update(TUnit.ID,f"Unit {TUnit.ID} was affected by {TEffect.Name} and has {'been cleared' if Clear else f'{TEffect.Turns} turns remaining.'}")
+                        Clear:bool = TEffect.Affect()
+                        if Clear:
+                            Game.Update(TUnit.ID,Constants.Clearing,Attribute = TEffect)
+                        else:
+                            Game.Update(TUnit.ID,Constants.Trigger,Attribute = TEffect)
 
 class Tools:
 
@@ -296,30 +332,6 @@ class Tools:
         sleep(1)
         Tools.Clear()
 
-    @staticmethod
-    def Shop():
-        Shop = ShopClass()
-        while True:
-            Tools.Clear()
-            Shop.Display()
-            try:
-                ItemID = input("Enter the ID of the item you wish to buy (e.g. U1,S2) or press 'E' to exit.\n> ").upper()
-                if ItemID[0] not in ["U","S","E"] or ItemID[1] not in range(1,len(Shop.Shelf["Upgrades"]) + 1) or ItemID not in range(1,len(Shop.Shelf["ShopUpgrades"])):
-                    raise ValueError("Invalid Item ID! Please try again or press 'E' to exit")
-                else:
-                    try:
-                        Shop.Purchase(ItemID,Player)
-                    except ValueError as Declined:
-                        print(Declined)
-                        continue
-                    except KeyboardInterrupt as Exit:
-                        print(Exit)
-                        Tools.Pause(Message = "Enter any key to exit the shop: ")
-                        Tools.Wait(StartingMessage = "Exiting Shop...")
-                        break
-            except ValueError as Invalid:
-                print(Invalid)
- 
 # The main function doesn't use the Controllers to notify the player
 def Main():
     # Not the first concept anymore
