@@ -40,7 +40,7 @@ class StatusEffect():
         Target.Affected.append(cls(Target,Level,Stacks))
 
     # I might have to have seperate effect procedures for each effect to get rid of permanent effects
-    def Effect(self):
+    def Affect(self):
         self.Effects[self.Level - 1]()
         self.Turns -= 1
         if self.Turns <= 0:
